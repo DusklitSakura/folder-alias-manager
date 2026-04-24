@@ -1,0 +1,16 @@
+<Project>
+  <!--
+    发版时只改这里：
+      <Version>           NuGet/语义版本，可带后缀（1.2.3 / 1.2.3-beta）
+      <AssemblyVersion>   .NET 程序集强名版本，必须 4 段且为纯数字
+      <FileVersion>       Win32 文件版本，4 段纯数字
+      <InformationalVersion> 关于页/日志展示，可带 +commit 等后缀
+    GitHub Release 的 tag 建议用 v<Version>，如 v1.0.1。
+  -->
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0</InformationalVersion>
+  </PropertyGroup>
+</Project>

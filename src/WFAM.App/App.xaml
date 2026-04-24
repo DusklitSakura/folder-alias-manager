@@ -1,0 +1,17 @@
+<Application x:Class="WFAM.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:WFAM.App.Helpers"
+             xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemesDictionary Theme="Dark" />
+                <ui:ControlsDictionary />
+            </ResourceDictionary.MergedDictionaries>
+
+            <helpers:BoolToVisibilityConverter x:Key="BoolToVis" />
+            <helpers:BoolToVisibilityConverter x:Key="InverseBoolToVis" Inverse="True" />
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

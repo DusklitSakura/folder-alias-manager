@@ -1,0 +1,253 @@
+<Page x:Class="WFAM.App.Views.Pages.FoldersPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:vm="clr-namespace:WFAM.App.ViewModels"
+      xmlns:helpers="clr-namespace:WFAM.App.Helpers"
+      xmlns:loc="clr-namespace:WFAM.App.Helpers"
+      mc:Ignorable="d"
+      d:DataContext="{d:DesignInstance Type=vm:FoldersViewModel}"
+      Title="{loc:Tr Folders.Title}"
+      Background="Transparent"
+      AllowDrop="True"
+      helpers:DragDropHelper.DropFolders="True">
+
+    <Grid Margin="36,18,36,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- 顶部说明 -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <ui:TextBlock Text="{loc:Tr Folders.Heading}"
+                          FontTypography="Subtitle"
+                          Margin="0,0,0,4" />
+            <ui:TextBlock Text="{loc:Tr Folders.Description}"
+                          FontTypography="Caption"
+                          Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+
+        <!-- 拖放区 + 操作按钮 -->
+        <ui:Card Grid.Row="1" Padding="20" Margin="0,0,0,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0"
+                        AllowDrop="True"
+                        helpers:DragDropHelper.DropFolders="True"
+                        BorderThickness="2"
+                        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                        Background="{DynamicResource SubtleFillColorTransparentBrush}"
+                        CornerRadius="8"
+                        Padding="20"
+                        MinHeight="96">
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                        <ui:SymbolIcon Symbol="ArrowDownload24"
+                                       FontSize="32"
+                                       Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                                       Margin="0,0,12,0" />
+                        <StackPanel>
+                            <ui:TextBlock Text="{loc:Tr Folders.DropPrimary}"
+                                          FontTypography="BodyStrong" />
+                            <ui:TextBlock Text="{loc:Tr Folders.DropSecondary}"
+                                          FontTypography="Caption"
+                                          Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Vertical"
+                            VerticalAlignment="Center"
+                            Margin="20,0,0,0">
+                    <ui:Button Appearance="Primary"
+                               Icon="{ui:SymbolIcon FolderAdd24}"
+                               Content="{loc:Tr Folders.Import}"
+                               Command="{Binding PickAndAddCommand}"
+                               Margin="0,0,0,8" />
+                    <ui:ToggleSwitch Content="{loc:Tr Folders.AutoScanIcons}"
+                                     IsChecked="{Binding AutoScanIcons, Mode=TwoWay}" />
+                </StackPanel>
+            </Grid>
+        </ui:Card>
+
+        <!-- 文件夹列表（卡片式） -->
+        <Border Grid.Row="2"
+                Background="{DynamicResource ControlOnImageFillColorDefaultBrush}"
+                CornerRadius="8">
+            <Grid>
+                <!-- 空状态 -->
+                <StackPanel HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Visibility="{Binding HasFolders, Converter={StaticResource InverseBoolToVis}}">
+                    <ui:SymbolIcon Symbol="FolderOpen24"
+                                   FontSize="48"
+                                   HorizontalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
+                    <ui:TextBlock Text="{loc:Tr Folders.Empty.Title}"
+                                  FontTypography="Subtitle"
+                                  HorizontalAlignment="Center"
+                                  Margin="0,8,0,0" />
+                    <ui:TextBlock Text="{loc:Tr Folders.Empty.Description}"
+                                  FontTypography="Caption"
+                                  Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                  HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding HasFolders, Converter={StaticResource BoolToVis}}">
+                    <ItemsControl ItemsSource="{Binding Folders}"
+                                  Padding="12">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:FolderItemViewModel}">
+                                <ui:Card Margin="0,0,0,8" Padding="14">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+
+                                        <!-- 上排：图标预览 + 名称/路径 -->
+                                        <Grid Grid.Row="0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0"
+                                                    Width="48" Height="48"
+                                                    CornerRadius="6"
+                                                    Background="{DynamicResource SubtleFillColorTertiaryBrush}"
+                                                    Margin="0,0,14,0">
+                                                <Image Source="{Binding SelectedIcon.Image}"
+                                                       Width="36" Height="36"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" />
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <ui:TextBlock Text="{Binding Name}"
+                                                              FontTypography="BodyStrong" />
+                                                <ui:TextBlock Text="{Binding Path}"
+                                                              FontTypography="Caption"
+                                                              Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                              TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <!-- 下排：别名 / 图标下拉 / 4 按钮 全部水平 -->
+                                        <Grid Grid.Row="1" Margin="0,10,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="220" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <ui:TextBox Grid.Column="0"
+                                                        VerticalAlignment="Center"
+                                                        Text="{Binding Alias, UpdateSourceTrigger=PropertyChanged}"
+                                                        PlaceholderText="{loc:Tr Folders.AliasPlaceholder}" />
+
+                                            <ComboBox Grid.Column="1"
+                                                      Margin="10,0,0,0"
+                                                      VerticalAlignment="Center"
+                                                      ItemsSource="{Binding AvailableIcons}"
+                                                      SelectedItem="{Binding SelectedIcon, Mode=TwoWay}">
+                                                <ComboBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Image Source="{Binding Image}"
+                                                                   Width="20" Height="20"
+                                                                   Margin="0,0,8,0" />
+                                                            <TextBlock Text="{Binding DisplayName}"
+                                                                       VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis" />
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ComboBox.ItemTemplate>
+                                            </ComboBox>
+
+                                            <StackPanel Grid.Column="2"
+                                                        Orientation="Horizontal"
+                                                        Margin="10,0,0,0"
+                                                        VerticalAlignment="Center">
+                                                <ui:Button Icon="{ui:SymbolIcon ImageAdd24}"
+                                                           Appearance="Secondary"
+                                                           ToolTip="{loc:Tr Folders.Tip.PickIcon}"
+                                                           Command="{Binding DataContext.PickCustomIconCommand,
+                                                                             RelativeSource={RelativeSource AncestorType=Page}}"
+                                                           CommandParameter="{Binding}"
+                                                           Margin="0,0,4,0" />
+                                                <ui:Button Icon="{ui:SymbolIcon ArrowReset24}"
+                                                           Appearance="Secondary"
+                                                           ToolTip="{loc:Tr Folders.Tip.RestoreDefault}"
+                                                           Command="{Binding DataContext.RestoreDefaultCommand,
+                                                                             RelativeSource={RelativeSource AncestorType=Page}}"
+                                                           CommandParameter="{Binding}"
+                                                           Margin="0,0,4,0" />
+                                                <ui:Button Icon="{ui:SymbolIcon FolderOpen24}"
+                                                           Appearance="Secondary"
+                                                           ToolTip="{loc:Tr Folders.Tip.OpenInExplorer}"
+                                                           Command="{Binding DataContext.OpenInExplorerCommand,
+                                                                             RelativeSource={RelativeSource AncestorType=Page}}"
+                                                           CommandParameter="{Binding}"
+                                                           Margin="0,0,4,0" />
+                                                <ui:Button Icon="{ui:SymbolIcon Delete24}"
+                                                           Appearance="Danger"
+                                                           ToolTip="{loc:Tr Folders.Tip.Remove}"
+                                                           Command="{Binding DataContext.RemoveCommand,
+                                                                             RelativeSource={RelativeSource AncestorType=Page}}"
+                                                           CommandParameter="{Binding}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Grid>
+                                </ui:Card>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+
+                <!-- 加载遮罩 -->
+                <Border Background="#80000000"
+                        Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}">
+                    <StackPanel HorizontalAlignment="Center"
+                                VerticalAlignment="Center">
+                        <ui:ProgressRing IsIndeterminate="True"
+                                         Width="56" Height="56" />
+                        <ui:TextBlock Text="{Binding BusyMessage}"
+                                      Foreground="White"
+                                      Margin="0,12,0,0"
+                                      HorizontalAlignment="Center" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- 底部操作栏 -->
+        <Grid Grid.Row="3" Margin="0,16,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <ui:Button Content="{loc:Tr Folders.Clear}"
+                           Icon="{ui:SymbolIcon Eraser24}"
+                           Appearance="Secondary"
+                           Command="{Binding ClearCommand}"
+                           Margin="0,0,8,0" />
+                <ui:Button Content="{loc:Tr Folders.RefreshIcons}"
+                           Icon="{ui:SymbolIcon ArrowSync24}"
+                           Appearance="Secondary"
+                           Command="{Binding RefreshIconsCommand}"
+                           Margin="0,0,8,0" />
+                <ui:Button Content="{loc:Tr Folders.Save}"
+                           Icon="{ui:SymbolIcon Save24}"
+                           Appearance="Primary"
+                           Command="{Binding SaveCommand}" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>

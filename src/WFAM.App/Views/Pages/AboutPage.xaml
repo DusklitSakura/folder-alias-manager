@@ -1,0 +1,51 @@
+<Page x:Class="WFAM.App.Views.Pages.AboutPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:vm="clr-namespace:WFAM.App.ViewModels"
+      xmlns:loc="clr-namespace:WFAM.App.Helpers"
+      d:DataContext="{d:DesignInstance Type=vm:AboutViewModel}"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      mc:Ignorable="d"
+      Title="{loc:Tr About.Title}"
+      Background="Transparent">
+    <StackPanel Margin="36,18,36,24" MaxWidth="680" HorizontalAlignment="Left">
+        <ui:Card Padding="22" Margin="0,0,0,16">
+            <StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <ui:SymbolIcon Symbol="FolderLink24" FontSize="30" Margin="0,0,12,0" />
+                    <StackPanel VerticalAlignment="Center">
+                        <ui:TextBlock Text="{loc:Tr About.AppName}" FontTypography="Title" />
+                        <StackPanel Orientation="Horizontal">
+                            <ui:TextBlock FontTypography="Caption"
+                                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                          Text="{loc:Tr About.VersionFormat}" />
+                            <ui:TextBlock FontTypography="Caption"
+                                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                          Margin="4,0,0,0"
+                                          Text="{Binding Version, Mode=OneWay}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+                <Separator Margin="0,12" />
+                <ui:TextBlock Text="{loc:Tr About.Description}" TextWrapping="Wrap" />
+            </StackPanel>
+        </ui:Card>
+
+        <ui:Card Padding="22" Margin="0,0,0,16">
+            <StackPanel>
+                <ui:TextBlock Text="{loc:Tr About.Tech}" FontTypography="BodyStrong" Margin="0,0,0,6" />
+                <ui:TextBlock Text="{loc:Tr About.Tech.Body}" TextWrapping="Wrap"
+                              Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+            </StackPanel>
+        </ui:Card>
+
+        <StackPanel Orientation="Horizontal">
+            <ui:HyperlinkButton Content="{loc:Tr About.OpenWpfUi}"
+                                Icon="{ui:SymbolIcon Link24}"
+                                Command="{Binding OpenLinkCommand}"
+                                CommandParameter="{Binding WpfUiUrl}" />
+        </StackPanel>
+    </StackPanel>
+</Page>

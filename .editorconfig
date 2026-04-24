@@ -1,0 +1,17 @@
+# EditorConfig — keep formatting consistent across editors.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{xml,xaml,csproj,props,targets,config,json,yml,yaml,md,ps1}]
+indent_size = 2
+
+[*.{cs,vb}]
+# 使用 4 空格缩进（C# 默认）
+indent_size = 4

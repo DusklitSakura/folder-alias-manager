@@ -1,0 +1,59 @@
+# --- Build output ---
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+
+# --- Visual Studio / Rider / VS Code ---
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.sln.iml
+*.DotSettings.user
+
+# --- ReSharper ---
+_ReSharper*/
+*.DotSettings
+
+# --- Test results & coverage ---
+[Tt]est[Rr]esult*/
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+.coverlet/
+
+# --- NuGet ---
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+!packages/build/
+*.nuget.props
+*.nuget.targets
+
+# --- Logs / temp / OS ---
+*.log
+*.tmp
+*.bak
+*.swp
+*.orig
+*.rej
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# --- WFAM 本地用户数据（如果误放进仓库目录） ---
+settings.json
+history.json
+
+# --- 不要忽略 GitHub Actions / 仓库根的 .github ---
+!.github/

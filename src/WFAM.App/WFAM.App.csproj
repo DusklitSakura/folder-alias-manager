@@ -1,0 +1,59 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>false</UseWindowsForms>
+    <RootNamespace>WFAM.App</RootNamespace>
+    <AssemblyName>WFAM</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <LangVersion>latest</LangVersion>
+    <Platforms>AnyCPU;x64</Platforms>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.3.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+    <PackageReference Include="WPF-UI" Version="4.2.1" />
+    <PackageReference Include="WPF-UI.DependencyInjection" Version="4.2.1" />
+  </ItemGroup>
+
+  <!-- 仅依赖 Helper 完成构建顺序，不让其 .dll 被合并到主程序 -->
+  <ItemGroup>
+    <ProjectReference Include="..\WFAM.Helper\WFAM.Helper.csproj">
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <Private>false</Private>
+      <SkipGetTargetFrameworkProperties>true</SkipGetTargetFrameworkProperties>
+    </ProjectReference>
+  </ItemGroup>
+
+  <!--
+    把 Helper 的完整运行时输出（.exe / .dll / .runtimeconfig.json / .deps.json / .pdb）
+    复制到主程序的 bin 目录。这样 ElevationService.LocateHelper() 才能找到
+    DesktopIniHelper.exe 并通过 ShellExecuteEx + "runas" 触发 UAC。
+  -->
+  <Target Name="CopyDesktopIniHelper"
+          AfterTargets="Build"
+          Inputs="..\WFAM.Helper\bin\$(Configuration)\$(TargetFramework)\DesktopIniHelper.exe"
+          Outputs="$(OutDir)DesktopIniHelper.exe">
+    <ItemGroup>
+      <_HelperFiles Include="..\WFAM.Helper\bin\$(Configuration)\$(TargetFramework)\DesktopIniHelper.exe" />
+      <_HelperFiles Include="..\WFAM.Helper\bin\$(Configuration)\$(TargetFramework)\DesktopIniHelper.dll" />
+      <_HelperFiles Include="..\WFAM.Helper\bin\$(Configuration)\$(TargetFramework)\DesktopIniHelper.runtimeconfig.json" />
+      <_HelperFiles Include="..\WFAM.Helper\bin\$(Configuration)\$(TargetFramework)\DesktopIniHelper.deps.json" />
+      <_HelperFiles Include="..\WFAM.Helper\bin\$(Configuration)\$(TargetFramework)\DesktopIniHelper.pdb"
+                    Condition="Exists('..\WFAM.Helper\bin\$(Configuration)\$(TargetFramework)\DesktopIniHelper.pdb')" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_HelperFiles)"
+          DestinationFolder="$(OutDir)"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>
