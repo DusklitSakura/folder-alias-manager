@@ -17,6 +17,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -28,7 +29,32 @@
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
-        <Grid Grid.Row="1">
+        <!-- 警告横幅：当前进程以管理员身份运行 -->
+        <Border Grid.Row="1"
+                Background="{DynamicResource SystemFillColorCautionBackgroundBrush}"
+                BorderBrush="{DynamicResource SystemFillColorCautionBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,10"
+                Visibility="{Binding IsRunningAsAdmin, Converter={StaticResource BoolToVis}}">
+            <StackPanel Orientation="Horizontal">
+                <ui:SymbolIcon Symbol="ShieldError24"
+                               FontSize="22"
+                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                               VerticalAlignment="Center"
+                               Margin="0,0,12,0" />
+                <StackPanel VerticalAlignment="Center">
+                    <ui:TextBlock Text="{loc:Tr Admin.Warning.Title}"
+                                  FontTypography="BodyStrong"
+                                  Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+                    <ui:TextBlock Text="{loc:Tr Admin.Warning.Subtitle}"
+                                  FontTypography="Caption"
+                                  TextWrapping="Wrap"
+                                  MaxWidth="1100" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <Grid Grid.Row="2">
             <ui:NavigationView x:Name="RootNavigation"
                                PaneDisplayMode="Left"
                                OpenPaneLength="220"

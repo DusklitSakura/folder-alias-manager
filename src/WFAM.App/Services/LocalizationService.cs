@@ -51,6 +51,10 @@ public sealed class LocalizationService : ILocalizationService
         // 应用 / 标题栏
         ["App.Title"] = "WFAM · Windows 文件夹别名管理器",
 
+        // 管理员警告
+        ["Admin.Warning.Title"] = "检测到以管理员身份运行",
+        ["Admin.Warning.Subtitle"] = "本程序不应该以管理员权限启动。需要提权的写入会自动调用独立的 DesktopIniHelper.exe 并弹出 UAC；以管理员启动主程序会导致拖放不可用（资源管理器与高完整性进程不互通）并增加不必要的风险。请关闭后以普通用户身份重新启动。",
+
         // 导航
         ["Nav.Folders"] = "文件夹",
         ["Nav.Drives"] = "U盘 / 驱动器",
@@ -212,6 +216,10 @@ public sealed class LocalizationService : ILocalizationService
     private static Dictionary<string, string> EnUs() => new()
     {
         ["App.Title"] = "WFAM · Windows Folder Alias Manager",
+
+        // Admin warning
+        ["Admin.Warning.Title"] = "Running as Administrator",
+        ["Admin.Warning.Subtitle"] = "This application should not be launched with elevated privileges. Operations that need elevation invoke a separate DesktopIniHelper.exe via UAC. Running the main process as Administrator breaks drag-and-drop (Explorer cannot communicate with high-integrity processes) and adds unnecessary risk. Please close this window and restart as a standard user.",
 
         ["Nav.Folders"] = "Folders",
         ["Nav.Drives"] = "USB Drives",
