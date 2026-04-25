@@ -61,6 +61,8 @@ public partial class App : Application
         s.AddSingleton<IHistoryService, HistoryService>();
         s.AddSingleton<IUpdateService, UpdateService>();
         s.AddSingleton<IUpdatePromptService, UpdatePromptService>();
+        s.AddSingleton<IAdminRestartService, AdminRestartService>();
+        s.AddSingleton<IExplorerBgService, ExplorerBgService>();
         // 本地化服务使用全局单例（TranslateExtension 也会访问同一个实例）
         s.AddSingleton<ILocalizationService>(_ => LocalizationService.Instance);
 

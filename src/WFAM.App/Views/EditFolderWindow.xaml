@@ -9,8 +9,8 @@
                  mc:Ignorable="d"
                  d:DataContext="{d:DesignInstance Type=vm:EditFolderViewModel}"
                  Title="{loc:Tr Edit.Title}"
-                 Width="520" Height="320"
-                 MinWidth="460" MinHeight="280"
+                 Width="520" Height="420"
+                 MinWidth="460" MinHeight="380"
                  ResizeMode="CanResize"
                  ShowInTaskbar="True"
                  WindowStartupLocation="CenterScreen"
@@ -36,6 +36,7 @@
             <!-- 编辑表单 -->
             <Grid Visibility="{Binding HasItem, Converter={StaticResource BoolToVis}}">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -104,6 +105,32 @@
                                Appearance="Secondary"
                                ToolTip="{loc:Tr Folders.Tip.PickIcon}"
                                Command="{Binding PickCustomIconCommand}" />
+                </Grid>
+
+                <!-- 背景 -->
+                <Grid Grid.Row="3" Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <ui:TextBlock Text="{loc:Tr Background.Label}" Margin="0,0,0,4" />
+                        <ui:TextBox Text="{Binding Item.BackgroundImage, UpdateSourceTrigger=PropertyChanged}"
+                                    PlaceholderText="{loc:Tr Background.Placeholder}" />
+                    </StackPanel>
+                    <ui:Button Grid.Column="1"
+                               Margin="8,20,0,0"
+                               Icon="{ui:SymbolIcon ImageMultiple24}"
+                               Appearance="Secondary"
+                               ToolTip="{loc:Tr Background.Tip.Pick}"
+                               Command="{Binding PickBackgroundCommand}" />
+                    <ui:Button Grid.Column="2"
+                               Margin="4,20,0,0"
+                               Icon="{ui:SymbolIcon ImageOff24}"
+                               Appearance="Secondary"
+                               ToolTip="{loc:Tr Background.Tip.Clear}"
+                               Command="{Binding ClearBackgroundCommand}" />
                 </Grid>
             </Grid>
 

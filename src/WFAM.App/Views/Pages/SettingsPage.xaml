@@ -91,6 +91,55 @@
                 </StackPanel>
             </ui:CardControl>
 
+            <!-- 图标存储策略 -->
+            <ui:CardControl Margin="0,0,0,12">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock Text="{loc:Tr Settings.IconCopy.Title}" FontTypography="BodyStrong" />
+                        <ui:TextBlock Text="{loc:Tr Settings.IconCopy.Description}"
+                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                      TextWrapping="Wrap" />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <ui:ToggleSwitch Content="{loc:Tr Settings.IconCopy.Toggle}"
+                                 IsChecked="{Binding CopyIconToFolder, Mode=TwoWay}" />
+            </ui:CardControl>
+
+            <!-- Explorer 背景扩展 -->
+            <ui:CardControl Margin="0,0,0,12">
+                <ui:CardControl.Header>
+                    <StackPanel>
+                        <ui:TextBlock Text="{loc:Tr Settings.ExplorerBg.Title}" FontTypography="BodyStrong" />
+                        <ui:TextBlock Text="{loc:Tr Settings.ExplorerBg.Description}"
+                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                      TextWrapping="Wrap" />
+                        <ui:TextBlock Margin="0,6,0,0"
+                                      FontTypography="Caption"
+                                      Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                                      Text="{loc:Tr Settings.ExplorerBg.StatusInstalled}"
+                                      Visibility="{Binding ExplorerBgInstalled, Converter={StaticResource BoolToVis}}" />
+                        <ui:TextBlock Margin="0,6,0,0"
+                                      FontTypography="Caption"
+                                      Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                      Text="{loc:Tr Settings.ExplorerBg.StatusNotInstalled}"
+                                      Visibility="{Binding ExplorerBgInstalled, Converter={StaticResource InverseBoolToVis}}" />
+                    </StackPanel>
+                </ui:CardControl.Header>
+                <StackPanel Orientation="Horizontal">
+                    <ui:Button Content="{loc:Tr Settings.ExplorerBg.Install}"
+                               Appearance="Primary"
+                               Icon="{ui:SymbolIcon Add24}"
+                               Margin="0,0,8,0"
+                               Command="{Binding InstallExplorerBgCommand}"
+                               IsEnabled="{Binding CanInstallExplorerBg}" />
+                    <ui:Button Content="{loc:Tr Settings.ExplorerBg.Uninstall}"
+                               Appearance="Secondary"
+                               Icon="{ui:SymbolIcon Delete24}"
+                               Command="{Binding UninstallExplorerBgCommand}"
+                               IsEnabled="{Binding CanUninstallExplorerBg}" />
+                </StackPanel>
+            </ui:CardControl>
+
             <!-- 更新 -->
             <ui:TextBlock Text="{loc:Tr Settings.Group.Update}"
                           FontTypography="Subtitle" Margin="0,12,0,12" />

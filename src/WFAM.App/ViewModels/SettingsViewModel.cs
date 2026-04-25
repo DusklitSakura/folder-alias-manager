@@ -16,6 +16,7 @@ public partial class SettingsViewModel : ObservableObject
     private readonly INotificationService _notify;
     private readonly IUpdateService? _updates;
     private readonly IUpdatePromptService? _prompt;
+    private readonly IExplorerBgService? _bg;
     private readonly ILogger<SettingsViewModel> _logger;
     private bool _suppressPersist;
     private UpdateInfo? _pendingUpdate;
@@ -29,6 +30,7 @@ public partial class SettingsViewModel : ObservableObject
         AboutViewModel about,
         IUpdateService updates,
         IUpdatePromptService prompt,
+        IExplorerBgService bg,
         ILogger<SettingsViewModel> logger)
     {
         _settings = settings;
@@ -38,6 +40,7 @@ public partial class SettingsViewModel : ObservableObject
         _notify = notify;
         _updates = updates;
         _prompt = prompt;
+        _bg = bg;
         _logger = logger;
         About = about;
 
@@ -59,6 +62,9 @@ public partial class SettingsViewModel : ObservableObject
                               ?? AvailableLanguages[0];
             IsContextMenuRegistered = _contextMenu.IsRegistered;
             AutoCheckUpdate = _settings.Current.AutoCheckUpdate;
+            ExplorerBgDllAvailable = _bg?.IsAvailable ?? false;
+            // 优先看 host 是否真的在跑；其次回退到持久化设置。
+            ExplorerBgInstalled = (_bg?.IsRunning ?? false) || _settings.Current.ExplorerBgInstalled;
         }
         finally { _suppressPersist = false; }
 
@@ -66,7 +72,7 @@ public partial class SettingsViewModel : ObservableObject
     }
 
     // 设计期默认构造
-    public SettingsViewModel() : this(null!, null!, null!, null!, null!, new AboutViewModel(), null!, null!, null!) { }
+    public SettingsViewModel() : this(null!, null!, null!, null!, null!, new AboutViewModel(), null!, null!, null!, null!) { }
 
     // ---------- 关于 ----------
     public AboutViewModel About { get; }
@@ -219,5 +225,75 @@ public partial class SettingsViewModel : ObservableObject
         _settings.Save();
         HasUpdateAvailable = false;
         UpdateStatusText = _localization["Update.Skipped"];
+    }
+
+    // ---------- Explorer 背景扩展 ----------
+    [ObservableProperty] private bool _explorerBgInstalled;       // 含义：是否已启用（host 在跑 + 自启）
+    [ObservableProperty] private bool _explorerBgDllAvailable;    // host + dll 文件齐全
+    [ObservableProperty] private bool _isExplorerBgBusy;
+
+    public bool CanInstallExplorerBg => ExplorerBgDllAvailable && !IsExplorerBgBusy && !ExplorerBgInstalled;
+    public bool CanUninstallExplorerBg => !IsExplorerBgBusy && ExplorerBgInstalled;
+
+    partial void OnExplorerBgInstalledChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanInstallExplorerBg));
+        OnPropertyChanged(nameof(CanUninstallExplorerBg));
+        if (_suppressPersist) return;
+        _settings.Current.ExplorerBgInstalled = value;
+        _settings.Save();
+    }
+    partial void OnExplorerBgDllAvailableChanged(bool value)
+        => OnPropertyChanged(nameof(CanInstallExplorerBg));
+    partial void OnIsExplorerBgBusyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanInstallExplorerBg));
+        OnPropertyChanged(nameof(CanUninstallExplorerBg));
+    }
+
+    [RelayCommand]
+    private async Task InstallExplorerBgAsync()
+    {
+        if (_bg is null || IsExplorerBgBusy) return;
+        IsExplorerBgBusy = true;
+        try
+        {
+            var r = await Task.Run(() => _bg.Enable());
+            HandleExplorerBgResult(r, install: true);
+        }
+        finally { IsExplorerBgBusy = false; }
+    }
+
+    [RelayCommand]
+    private async Task UninstallExplorerBgAsync()
+    {
+        if (_bg is null || IsExplorerBgBusy) return;
+        IsExplorerBgBusy = true;
+        try
+        {
+            var r = await Task.Run(() => _bg.Disable());
+            HandleExplorerBgResult(r, install: false);
+        }
+        finally { IsExplorerBgBusy = false; }
+    }
+
+    private void HandleExplorerBgResult(ExplorerBgEnableResult r, bool install)
+    {
+        switch (r)
+        {
+            case ExplorerBgEnableResult.Ok:
+                ExplorerBgInstalled = install;
+                _notify.Success(_localization["Common.Success"],
+                    _localization[install ? "Settings.ExplorerBg.Installed" : "Settings.ExplorerBg.Uninstalled"]);
+                break;
+            case ExplorerBgEnableResult.HostMissing:
+            case ExplorerBgEnableResult.DllMissing:
+                _notify.Warning(_localization["Common.Failed"], _localization["Settings.ExplorerBg.DllMissing"]);
+                break;
+            case ExplorerBgEnableResult.LaunchFailed:
+            default:
+                _notify.Warning(_localization["Common.Failed"], _localization["Settings.ExplorerBg.Failed"]);
+                break;
+        }
     }
 }

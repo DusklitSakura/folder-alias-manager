@@ -96,7 +96,7 @@ public partial class HistoryViewModel : ObservableObject
             else
             {
                 var iconPath = string.IsNullOrEmpty(entry.BeforeIconPath) ? null : entry.BeforeIconPath;
-                var rs = await _ini.WriteAsync(entry.FolderPath, entry.BeforeAlias, iconPath, entry.BeforeIconIndex);
+                var rs = await _ini.WriteAsync(entry.FolderPath, entry.BeforeAlias, iconPath, entry.BeforeIconIndex, null);
                 outcome = rs.Outcome; failMessage = rs.Message;
                 if (outcome == WriteOutcome.AccessDenied && _elevation.IsHelperAvailable)
                 {

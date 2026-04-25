@@ -54,6 +54,12 @@ public sealed class LocalizationService : ILocalizationService
         // 管理员警告
         ["Admin.Warning.Title"] = "检测到以管理员身份运行",
         ["Admin.Warning.Subtitle"] = "本程序不应该以管理员权限启动。需要提权的写入会自动调用独立的 DesktopIniHelper.exe 并弹出 UAC；以管理员启动主程序会导致拖放不可用（资源管理器与高完整性进程不互通）并增加不必要的风险。请关闭后以普通用户身份重新启动。",
+        ["Admin.Warning.Dismiss"] = "关闭此提示",
+        ["Admin.Dialog.Title"] = "建议以普通权限运行",
+        ["Admin.Dialog.Content"] = "WFAM 当前以管理员身份启动。这会破坏文件夹拖放（资源管理器无法把数据传给高完整性进程），并扩大潜在的安全风险。需要写入受保护目录时，程序会自动通过独立的 DesktopIniHelper.exe 触发一次 UAC，无需主程序具备管理员权限。\n\n是否立即以普通用户权限重启 WFAM？",
+        ["Admin.Dialog.RestartAsUser"] = "以普通用户重启",
+        ["Admin.Dialog.KeepRunning"] = "继续以管理员运行",
+        ["Admin.Restart.Failed"] = "降权重启失败，请手动关闭后再以普通用户身份启动。",
 
         // 导航
         ["Nav.Folders"] = "文件夹",
@@ -211,6 +217,31 @@ public sealed class LocalizationService : ILocalizationService
         ["History.Clear"] = "清空全部",
         ["History.Action.Modify"] = "修改",
         ["History.Action.Restore"] = "还原",
+
+        // 自定义背景
+        ["Background.Label"] = "背景图片",
+        ["Background.Placeholder"] = "图片绝对路径（留空则使用默认背景）",
+        ["Background.Tip.Pick"] = "选择背景图片（jpg / png / bmp / gif）",
+        ["Background.Tip.Clear"] = "清除自定义背景",
+        ["Background.Note"] = "Windows 7 之后的资源管理器已不再绘制 IconArea_Image；该字段仍会写入 desktop.ini，被部分第三方文件管理器（如 OneCommander、Q-Dir、TC 等）识别。",
+
+        // 图标存储策略
+        ["Settings.IconCopy.Title"] = "图标保存方式",
+        ["Settings.IconCopy.Description"] = "推荐开启。开启后会把所选 .ico 复制到目标文件夹根目录（folder.ico）并在 desktop.ini 中写入相对路径；这样即使以后卸载本程序或删除安装目录里的原始图标，文件夹仍会保留原有图标而不会变成空白。关闭则在 desktop.ini 中写入图标的绝对路径，依赖原文件始终存在。若图标已位于该文件夹下（含子目录中的 exe / dll / ico），无论开关如何均不会重复创建。",
+        ["Settings.IconCopy.Toggle"] = "复制 .ico 到文件夹下（推荐）",
+
+        // Explorer 背景扩展
+        ["Settings.ExplorerBg.Title"] = "文件资源管理器背景扩展",
+        ["Settings.ExplorerBg.Description"] = "启动常驻注入器 WFAM.BgHost.exe，由它将 WFAM.ExplorerBg.dll 注入 explorer.exe，进入配置了 desktop.ini 背景的文件夹时会绘制背景图。启用 / 禁用不需要管理员权限；启用后会随用户登录自动启动。",
+        ["Settings.ExplorerBg.Install"] = "启用",
+        ["Settings.ExplorerBg.Uninstall"] = "禁用",
+        ["Settings.ExplorerBg.StatusInstalled"] = "状态：已启用",
+        ["Settings.ExplorerBg.StatusNotInstalled"] = "状态：未启用",
+        ["Settings.ExplorerBg.Installed"] = "已启用。重新打开任一文件夹即可生效。",
+        ["Settings.ExplorerBg.Uninstalled"] = "已禁用。已打开的资源管理器窗口重启后背景会消失。",
+        ["Settings.ExplorerBg.HelperMissing"] = "未找到 WFAM.BgHost.exe。",
+        ["Settings.ExplorerBg.DllMissing"] = "未找到 WFAM.BgHost.exe 或 WFAM.ExplorerBg.dll（请先构建 C++ 子项目）。",
+        ["Settings.ExplorerBg.Failed"] = "启用 / 禁用失败。请查看日志。",
     };
 
     private static Dictionary<string, string> EnUs() => new()
@@ -220,6 +251,12 @@ public sealed class LocalizationService : ILocalizationService
         // Admin warning
         ["Admin.Warning.Title"] = "Running as Administrator",
         ["Admin.Warning.Subtitle"] = "This application should not be launched with elevated privileges. Operations that need elevation invoke a separate DesktopIniHelper.exe via UAC. Running the main process as Administrator breaks drag-and-drop (Explorer cannot communicate with high-integrity processes) and adds unnecessary risk. Please close this window and restart as a standard user.",
+        ["Admin.Warning.Dismiss"] = "Dismiss this notice",
+        ["Admin.Dialog.Title"] = "Run without Administrator privileges",
+        ["Admin.Dialog.Content"] = "WFAM is currently running as Administrator. This breaks drag-and-drop from Explorer (high-integrity processes cannot receive UI data) and broadens the security surface. When a write needs elevation, the app will spawn DesktopIniHelper.exe through UAC — the main process does not need to be elevated.\n\nRestart WFAM as a standard user now?",
+        ["Admin.Dialog.RestartAsUser"] = "Restart as standard user",
+        ["Admin.Dialog.KeepRunning"] = "Keep running as Administrator",
+        ["Admin.Restart.Failed"] = "Failed to restart unelevated. Please close manually and start the app as a standard user.",
 
         ["Nav.Folders"] = "Folders",
         ["Nav.Drives"] = "USB Drives",
@@ -365,6 +402,13 @@ public sealed class LocalizationService : ILocalizationService
         ["History.Heading"] = "Modifications & restores",
         ["History.Description"] = "Recent changes are recorded here. You can revert any entry to its previous state.",
         ["History.Empty"] = "No history yet",
+
+        // Custom background
+        ["Background.Label"] = "Background image",
+        ["Background.Placeholder"] = "Absolute image path (leave empty for default)",
+        ["Background.Tip.Pick"] = "Pick a background image (jpg / png / bmp / gif)",
+        ["Background.Tip.Clear"] = "Clear custom background",
+        ["Background.Note"] = "Modern Windows Explorer no longer draws IconArea_Image; the value is still written to desktop.ini and respected by several third-party file managers (OneCommander, Q-Dir, Total Commander, …).",
         ["History.Before"] = "Before:",
         ["History.After"] = "After:",
         ["History.Restore"] = "Restore",
@@ -372,5 +416,23 @@ public sealed class LocalizationService : ILocalizationService
         ["History.Clear"] = "Clear all",
         ["History.Action.Modify"] = "Modify",
         ["History.Action.Restore"] = "Restore",
+
+        // Icon storage policy
+        ["Settings.IconCopy.Title"] = "Icon storage strategy",
+        ["Settings.IconCopy.Description"] = "Recommended on. When enabled, the selected .ico is copied into the target folder (folder.ico) and a relative path is written to desktop.ini, so the folder keeps its icon even if WFAM is later uninstalled or the original icon file is deleted. When disabled, the absolute path of the icon is written and the folder will revert to a blank icon if the source disappears. Icons already located inside the folder (including exe / dll / ico in subdirectories) are never duplicated regardless of this setting.",
+        ["Settings.IconCopy.Toggle"] = "Copy .ico into the folder (recommended)",
+
+        // Explorer background extension
+        ["Settings.ExplorerBg.Title"] = "Explorer background extension",
+        ["Settings.ExplorerBg.Description"] = "Starts the resident injector WFAM.BgHost.exe, which loads WFAM.ExplorerBg.dll into explorer.exe. Folders configured with a desktop.ini background will then be drawn with that image. Enable / disable does not require administrator privileges; once enabled, the host runs at user logon automatically.",
+        ["Settings.ExplorerBg.Install"] = "Enable",
+        ["Settings.ExplorerBg.Uninstall"] = "Disable",
+        ["Settings.ExplorerBg.StatusInstalled"] = "Status: Enabled",
+        ["Settings.ExplorerBg.StatusNotInstalled"] = "Status: Disabled",
+        ["Settings.ExplorerBg.Installed"] = "Enabled. Reopen any folder to see the background.",
+        ["Settings.ExplorerBg.Uninstalled"] = "Disabled. Open Explorer windows will lose the background after they are reopened.",
+        ["Settings.ExplorerBg.HelperMissing"] = "WFAM.BgHost.exe not found.",
+        ["Settings.ExplorerBg.DllMissing"] = "WFAM.BgHost.exe or WFAM.ExplorerBg.dll not found (build the C++ sub-projects first).",
+        ["Settings.ExplorerBg.Failed"] = "Enable / disable failed. Check the logs.",
     };
 }

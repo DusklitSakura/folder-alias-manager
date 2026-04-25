@@ -87,12 +87,21 @@ internal static class Program
                 }
                 else
                 {
-                    ok = DesktopIniWriter.Write(
-                        item.FolderPath,
-                        item.Alias,
-                        string.IsNullOrEmpty(item.IconPath) ? null : item.IconPath,
-                        item.IconIndex);
-                    if (!ok) message = "写入 desktop.ini 失败";
+                    if (!SecurityGuard.IsValidBackgroundImagePath(item.BackgroundImage, out var bgReason))
+                    {
+                        message = $"非法背景路径：{bgReason}";
+                        Console.Error.WriteLine($"[{item.Name}] {message}");
+                    }
+                    else
+                    {
+                        ok = DesktopIniWriter.Write(
+                            item.FolderPath,
+                            item.Alias,
+                            string.IsNullOrEmpty(item.IconPath) ? null : item.IconPath,
+                            item.IconIndex,
+                            string.IsNullOrEmpty(item.BackgroundImage) ? null : item.BackgroundImage);
+                        if (!ok) message = "写入 desktop.ini 失败";
+                    }
                 }
             }
             catch (Exception ex)
@@ -157,12 +166,21 @@ internal static class Program
 
                     if (message is null)
                     {
-                        ok = AutorunInfWriter.Write(
-                            item.DrivePath,
-                            item.Label ?? string.Empty,
-                            staged,
-                            item.IconTargetName);
-                        if (!ok) message = "写入 autorun.inf 失败";
+                        if (!SecurityGuard.IsValidBackgroundImagePath(item.BackgroundImage, out var bgReason))
+                        {
+                            message = $"非法背景路径：{bgReason}";
+                            Console.Error.WriteLine($"[{item.Name}] {message}");
+                        }
+                        else
+                        {
+                            ok = AutorunInfWriter.Write(
+                                item.DrivePath,
+                                item.Label ?? string.Empty,
+                                staged,
+                                item.IconTargetName,
+                                string.IsNullOrEmpty(item.BackgroundImage) ? null : item.BackgroundImage);
+                            if (!ok) message = "写入 autorun.inf 失败";
+                        }
                     }
                 }
             }
@@ -213,6 +231,7 @@ internal static class Program
         [JsonPropertyName("icon_path")] public string IconPath { get; set; } = string.Empty;
         [JsonPropertyName("icon_index")] public int IconIndex { get; set; }
         [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("background_image")] public string BackgroundImage { get; set; } = string.Empty;
         [JsonPropertyName("restore")] public bool Restore { get; set; }
     }
 
@@ -244,6 +263,7 @@ internal static class Program
         [JsonPropertyName("label")] public string Label { get; set; } = string.Empty;
         [JsonPropertyName("staged_icon_path")] public string StagedIconPath { get; set; } = string.Empty;
         [JsonPropertyName("icon_target_name")] public string IconTargetName { get; set; } = string.Empty;
+        [JsonPropertyName("background_image")] public string BackgroundImage { get; set; } = string.Empty;
         [JsonPropertyName("restore")] public bool Restore { get; set; }
     }
 }

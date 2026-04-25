@@ -35,14 +35,20 @@
                 BorderBrush="{DynamicResource SystemFillColorCautionBrush}"
                 BorderThickness="0,0,0,1"
                 Padding="16,10"
-                Visibility="{Binding IsRunningAsAdmin, Converter={StaticResource BoolToVis}}">
-            <StackPanel Orientation="Horizontal">
-                <ui:SymbolIcon Symbol="ShieldError24"
+                Visibility="{Binding ShowAdminWarning, Converter={StaticResource BoolToVis}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <ui:SymbolIcon Grid.Column="0"
+                               Symbol="ShieldError24"
                                FontSize="22"
                                Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                                VerticalAlignment="Center"
                                Margin="0,0,12,0" />
-                <StackPanel VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <ui:TextBlock Text="{loc:Tr Admin.Warning.Title}"
                                   FontTypography="BodyStrong"
                                   Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
@@ -51,7 +57,13 @@
                                   TextWrapping="Wrap"
                                   MaxWidth="1100" />
                 </StackPanel>
-            </StackPanel>
+                <ui:Button Grid.Column="2"
+                           Appearance="Secondary"
+                           Icon="{ui:SymbolIcon Dismiss24}"
+                           ToolTip="{loc:Tr Admin.Warning.Dismiss}"
+                           Command="{Binding DismissAdminWarningCommand}"
+                           VerticalAlignment="Center" />
+            </Grid>
         </Border>
 
         <Grid Grid.Row="2">

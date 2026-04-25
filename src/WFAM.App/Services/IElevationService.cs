@@ -27,12 +27,17 @@ public sealed record ElevatedWriteRequest(
     string Alias,
     string? IconPath,
     int IconIndex,
+    string? BackgroundImage = null,
     bool Restore = false);
 
 /// <summary>
 /// 提权写 autorun.inf 的请求。
 /// <see cref="StagedIconPath"/> 必须位于 %TEMP%（由 App 侧预处理为 .ico），
 /// helper 仅负责把它复制到 <see cref="DrivePath"/> 根目录下命名为 <see cref="IconTargetName"/>。
+/// <para>
+/// <see cref="BackgroundImage"/> 是写入到驱动器根 desktop.ini 的 IconArea_Image 字段（绝对/相对路径字符串），
+/// helper 不会复制图像文件，只把它作为字面量写进 desktop.ini。
+/// </para>
 /// </summary>
 public sealed record ElevatedAutorunRequest(
     string DrivePath,
@@ -40,4 +45,5 @@ public sealed record ElevatedAutorunRequest(
     string Label,
     string? StagedIconPath,
     string IconTargetName,
+    string? BackgroundImage = null,
     bool Restore = false);

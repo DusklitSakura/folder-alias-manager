@@ -4,6 +4,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using WFAM.App.Helpers;
 using WFAM.App.Models;
 using WFAM.App.Services;
 
@@ -22,6 +23,7 @@ public partial class FoldersViewModel : ObservableObject
     private readonly IFolderPickerService _picker;
     private readonly IHistoryService _history;
     private readonly ILocalizationService _loc;
+    private readonly ISettingsService _settings;
     private readonly ILogger<FoldersViewModel> _logger;
 
     public FoldersViewModel(
@@ -33,11 +35,12 @@ public partial class FoldersViewModel : ObservableObject
         IFolderPickerService picker,
         IHistoryService history,
         ILocalizationService loc,
+        ISettingsService settings,
         ILogger<FoldersViewModel> logger)
     {
         _ini = ini; _icons = icons; _elevation = elevation;
         _shell = shell; _notify = notify; _picker = picker;
-        _history = history; _loc = loc; _logger = logger;
+        _history = history; _loc = loc; _settings = settings; _logger = logger;
     }
 
     public ObservableCollection<FolderItemViewModel> Folders { get; } = new();
@@ -57,7 +60,7 @@ public partial class FoldersViewModel : ObservableObject
     public bool HasFolders => Folders.Count > 0;
 
     public FoldersViewModel() : this(
-        null!, null!, null!, null!, null!, null!, null!, null!, null!) { }
+        null!, null!, null!, null!, null!, null!, null!, null!, null!, null!) { }
 
     // ----- 命令 -----
 
@@ -120,11 +123,12 @@ public partial class FoldersViewModel : ObservableObject
 
             foreach (var f in Folders)
             {
-                var iconPath = f.SelectedIcon is { IsDefault: false } e ? e.SourcePath : null;
-                var iconIdx = f.SelectedIcon is { IsDefault: false } e2 ? e2.Index : 0;
+                var rawIconPath = f.SelectedIcon is { IsDefault: false } e ? e.SourcePath : null;
+                var rawIconIdx = f.SelectedIcon is { IsDefault: false } e2 ? e2.Index : 0;
+                var (iconPath, iconIdx) = IconStaging.ResolveIconPath(f.Path, rawIconPath, rawIconIdx, _settings.Current.CopyIconToFolder);
                 try
                 {
-                    var result = await _ini.WriteAsync(f.Path, f.Alias, iconPath, iconIdx);
+                    var result = await _ini.WriteAsync(f.Path, f.Alias, iconPath, iconIdx, f.BackgroundImage);
                     switch (result.Outcome)
                     {
                         case WriteOutcome.Success:
@@ -132,7 +136,7 @@ public partial class FoldersViewModel : ObservableObject
                             AppendHistory(f, snapshots, iconPath, iconIdx);
                             break;
                         case WriteOutcome.AccessDenied:
-                            denied.Add(new ElevatedWriteRequest(f.Path, f.Name, f.Alias, iconPath, iconIdx));
+                            denied.Add(new ElevatedWriteRequest(f.Path, f.Name, f.Alias, iconPath, iconIdx, f.BackgroundImage));
                             break;
                         default:
                             failed.Add(string.IsNullOrWhiteSpace(result.Message) ? f.Name : $"{f.Name} ({result.Message})");
@@ -167,8 +171,9 @@ public partial class FoldersViewModel : ObservableObject
                             var f = Folders.FirstOrDefault(x => x.Path == r.FolderPath);
                             if (f is not null)
                             {
-                                var iconPath = f.SelectedIcon is { IsDefault: false } e ? e.SourcePath : null;
-                                var iconIdx = f.SelectedIcon is { IsDefault: false } e2 ? e2.Index : 0;
+                                var rawIconPath = f.SelectedIcon is { IsDefault: false } e ? e.SourcePath : null;
+                                var rawIconIdx = f.SelectedIcon is { IsDefault: false } e2 ? e2.Index : 0;
+                                var (iconPath, iconIdx) = IconStaging.ResolveIconPath(f.Path, rawIconPath, rawIconIdx, _settings.Current.CopyIconToFolder);
                                 AppendHistory(f, snapshots, iconPath, iconIdx);
                             }
                         }
@@ -226,6 +231,22 @@ public partial class FoldersViewModel : ObservableObject
         }
         item.AvailableIcons.Add(entry);
         item.SelectedIcon = entry;
+    }
+
+    [RelayCommand]
+    private void PickBackground(FolderItemViewModel? item)
+    {
+        if (item is null) return;
+        var file = _picker.PickImageFile();
+        if (string.IsNullOrEmpty(file)) return;
+        item.BackgroundImage = file;
+    }
+
+    [RelayCommand]
+    private void ClearBackground(FolderItemViewModel? item)
+    {
+        if (item is null) return;
+        item.BackgroundImage = null;
     }
 
     private bool CanRunAction() => !IsBusy && Folders.Count > 0;

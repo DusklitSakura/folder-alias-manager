@@ -125,6 +125,22 @@ public partial class UsbDrivesViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void PickBackground(DriveItemViewModel? item)
+    {
+        if (item is null) return;
+        var file = _picker.PickImageFile();
+        if (string.IsNullOrEmpty(file)) return;
+        item.BackgroundImage = file;
+    }
+
+    [RelayCommand]
+    private void ClearBackground(DriveItemViewModel? item)
+    {
+        if (item is null) return;
+        item.BackgroundImage = null;
+    }
+
+    [RelayCommand]
     private void OpenInExplorer(DriveItemViewModel? item)
     {
         if (item is null) return;
@@ -161,6 +177,7 @@ public partial class UsbDrivesViewModel : ObservableObject
                         Label: string.Empty,
                         StagedIconPath: null,
                         IconTargetName: _autorun.DriveIconFileName,
+                        BackgroundImage: null,
                         Restore: true),
                 });
                 if (r.Count > 0) { outcome = r[0].Outcome; message = r[0].Message; }
@@ -211,7 +228,7 @@ public partial class UsbDrivesViewModel : ObservableObject
                         staged = await _autorun.StageIconAsync(e.SourcePath, e.Index);
                     }
 
-                    var result = await _autorun.WriteAsync(d.Root, d.Label ?? string.Empty, staged);
+                    var result = await _autorun.WriteAsync(d.Root, d.Label ?? string.Empty, staged, d.BackgroundImage);
                     switch (result.Outcome)
                     {
                         case WriteOutcome.Success:
@@ -260,6 +277,7 @@ public partial class UsbDrivesViewModel : ObservableObject
                         Label: t.item.Label ?? string.Empty,
                         StagedIconPath: t.staged,
                         IconTargetName: _autorun.DriveIconFileName,
+                        BackgroundImage: t.item.BackgroundImage,
                         Restore: false)).ToList();
 
                     var results = await _elevation.ElevatedBatchAutorunAsync(requests);

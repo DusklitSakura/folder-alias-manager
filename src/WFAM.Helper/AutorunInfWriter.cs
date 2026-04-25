@@ -15,7 +15,8 @@ internal static class AutorunInfWriter
         string drivePath,
         string label,
         string? stagedIconPath,
-        string iconTargetName)
+        string iconTargetName,
+        string? backgroundImage = null)
     {
         if (!Directory.Exists(drivePath)) return false;
 
@@ -59,15 +60,63 @@ internal static class AutorunInfWriter
         File.Move(tempPath, iniPath);
 
         RunAttrib($"+h +s \"{iniPath}\"");
+
+        // 同步盘符根 desktop.ini 中的 background 段
+        WriteDriveBackground(drivePath, backgroundImage);
+
         return true;
     }
 
-    /// <summary>删除 autorun.inf 与（若存在的）相同名图标文件。</summary>
+    private static void WriteDriveBackground(string drivePath, string? backgroundImage)
+    {
+        var deskIni = Path.Combine(drivePath, "desktop.ini");
+        var deskTmp = Path.Combine(drivePath, "desktop.tmp");
+        if (File.Exists(deskIni)) RunAttrib($"-r -h -s \"{deskIni}\"");
+
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+        Encoding encoding;
+        try { encoding = Encoding.GetEncoding(0); }
+        catch { encoding = Encoding.UTF8; }
+
+        var lines = new List<string>();
+        if (File.Exists(deskIni))
+        {
+            try { lines.AddRange(File.ReadAllLines(deskIni, encoding)); }
+            catch
+            {
+                try { lines = File.ReadAllLines(deskIni, Encoding.UTF8).ToList(); encoding = Encoding.UTF8; }
+                catch { /* ignore */ }
+            }
+        }
+
+        var output = DesktopIniWriter.MergeBackground(lines, backgroundImage);
+
+        if (output.Count == 0 || output.All(string.IsNullOrWhiteSpace))
+        {
+            try { if (File.Exists(deskIni)) File.Delete(deskIni); } catch { /* ignore */ }
+            return;
+        }
+
+        try
+        {
+            File.WriteAllLines(deskTmp, output, encoding);
+            if (File.Exists(deskIni)) File.Delete(deskIni);
+            File.Move(deskTmp, deskIni);
+            RunAttrib($"+h +s \"{deskIni}\"");
+        }
+        catch
+        {
+            try { if (File.Exists(deskTmp)) File.Delete(deskTmp); } catch { /* ignore */ }
+        }
+    }
+
+    /// <summary>删除 autorun.inf、(若存在的) 同名图标文件 与 盘符根 desktop.ini。</summary>
     public static bool Restore(string drivePath, string iconTargetName)
     {
         if (!Directory.Exists(drivePath)) return false;
         var iniPath = Path.Combine(drivePath, "autorun.inf");
         var iconPath = Path.Combine(drivePath, iconTargetName);
+        var deskIni = Path.Combine(drivePath, "desktop.ini");
 
         if (File.Exists(iniPath))
         {
@@ -79,6 +128,12 @@ internal static class AutorunInfWriter
         {
             RunAttrib($"-r -h -s \"{iconPath}\"");
             try { File.Delete(iconPath); }
+            catch { return false; }
+        }
+        if (File.Exists(deskIni))
+        {
+            RunAttrib($"-r -h -s \"{deskIni}\"");
+            try { File.Delete(deskIni); }
             catch { return false; }
         }
         return true;

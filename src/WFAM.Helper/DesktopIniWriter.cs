@@ -8,7 +8,7 @@ namespace WFAM.Helper;
 /// </summary>
 internal static class DesktopIniWriter
 {
-    public static bool Write(string folderPath, string alias, string? iconPath, int iconIndex)
+    public static bool Write(string folderPath, string alias, string? iconPath, int iconIndex, string? backgroundImage = null)
     {
         if (!Directory.Exists(folderPath)) return false;
 
@@ -41,6 +41,7 @@ internal static class DesktopIniWriter
         }
 
         var output = MergeIniLines(lines, alias, iconPath, iconIndex);
+        output = MergeBackground(output, backgroundImage);
 
         File.WriteAllLines(tempPath, output, encoding);
         if (File.Exists(iniPath)) File.Delete(iniPath);
@@ -52,17 +53,24 @@ internal static class DesktopIniWriter
         return true;
     }
 
-    /// <summary>删除 desktop.ini 并清除文件夹只读属性。</summary>
+    /// <summary>删除 desktop.ini、staged 的 directory.ico 并清除文件夹只读属性。</summary>
     public static bool Restore(string folderPath)
     {
         if (!Directory.Exists(folderPath)) return false;
         var iniPath = Path.Combine(folderPath, "desktop.ini");
+        var stagedIco = Path.Combine(folderPath, "directory.ico");
         RunAttrib($"-r \"{folderPath}\"");
         if (File.Exists(iniPath))
         {
             RunIcacls(iniPath);
             RunAttrib($"-r -h -s \"{iniPath}\"");
             try { File.Delete(iniPath); }
+            catch { return false; }
+        }
+        if (File.Exists(stagedIco))
+        {
+            RunAttrib($"-r -h -s -a \"{stagedIco}\"");
+            try { File.Delete(stagedIco); }
             catch { return false; }
         }
         return true;
@@ -131,6 +139,43 @@ internal static class DesktopIniWriter
     // 等同于本地权限提升风险。现降级为 BUILTIN\Users:Modify (S-1-5-32-545)，
     // 仅给当前机器交互式用户写权限，确保后续主程序在非提权状态下仍能更新别名。
     private static void RunIcacls(string path) => RunSilent("icacls", $"\"{path}\" /grant *S-1-5-32-545:M");
+
+    // ---- 自定义背景（[ExtShellFolderViews] / [{BE098140-...}].IconArea_Image） ----
+
+    private const string ExtShellSection = "[ExtShellFolderViews]";
+    private const string BackgroundGuid = "{BE098140-A513-11D0-A3A4-00C04FD706EC}";
+    private const string BackgroundSection = "[" + BackgroundGuid + "]";
+
+    public static List<string> MergeBackground(List<string> input, string? backgroundImage)
+    {
+        var stripped = new List<string>(input.Count);
+        var section = string.Empty;
+        foreach (var raw in input)
+        {
+            var trimmed = raw.Trim();
+            if (trimmed.StartsWith('[') && trimmed.EndsWith(']'))
+            {
+                section = trimmed;
+                if (section.Equals(ExtShellSection, StringComparison.OrdinalIgnoreCase) ||
+                    section.Equals(BackgroundSection, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                stripped.Add(raw);
+                continue;
+            }
+            if (section.Equals(ExtShellSection, StringComparison.OrdinalIgnoreCase) ||
+                section.Equals(BackgroundSection, StringComparison.OrdinalIgnoreCase))
+                continue;
+            stripped.Add(raw);
+        }
+        if (string.IsNullOrEmpty(backgroundImage)) return stripped;
+        if (stripped.Count > 0 && !string.IsNullOrWhiteSpace(stripped[^1])) stripped.Add(string.Empty);
+        stripped.Add(ExtShellSection);
+        stripped.Add($"{BackgroundGuid}={BackgroundGuid}");
+        stripped.Add(BackgroundSection);
+        stripped.Add("Attributes=1");
+        stripped.Add($"IconArea_Image={backgroundImage}");
+        return stripped;
+    }
 
     private static void RunSilent(string fileName, string arguments)
     {

@@ -15,11 +15,14 @@ public interface IAutorunInfService
     /// <summary>
     /// 写入 autorun.inf；若 <paramref name="stagedIcoPath"/> 非空则同时把该 .ico 复制为
     /// <see cref="DriveIconFileName"/> 放到盘符根并加上隐藏/系统属性。
+    /// 若 <paramref name="backgroundImage"/> 非空则同时维护盘符根的 desktop.ini，
+    /// 写入 IconArea_Image 字段以提供自定义背景。
     /// </summary>
     Task<WriteResult> WriteAsync(
         string drivePath,
         string label,
         string? stagedIcoPath,
+        string? backgroundImage,
         CancellationToken ct = default);
 
     /// <summary>恢复默认：删除 autorun.inf 与（若存在的）图标文件。</summary>

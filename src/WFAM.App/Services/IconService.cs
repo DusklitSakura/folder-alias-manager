@@ -55,23 +55,43 @@ public sealed class IconService : IIconService
         {
             var result = new List<IconEntry> { GetDefaultFolderIcon() };
             var hashes = new HashSet<string>();
+            var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            IEnumerable<string> exeFiles;
+            // 1) 优先插入目录下的 .ico （含 staged 的 directory.ico）
             try
             {
-                exeFiles = Directory.EnumerateFiles(folderPath, "*.exe", SearchOption.AllDirectories);
+                foreach (var ico in Directory.EnumerateFiles(folderPath, "*.ico", SearchOption.AllDirectories))
+                {
+                    if (ct.IsCancellationRequested) break;
+                    if (result.Count >= maxIcons) break;
+                    if (!seenPaths.Add(ico)) continue;
+                    var entry = ExtractSingle(ico, 0);
+                    if (entry is null) continue;
+                    var hash = HashImage(entry.Image);
+                    if (hash is null || hashes.Add(hash))
+                        result.Add(entry);
+                }
+            }
+            catch { /* ignore enumeration failures */ }
+
+            // 2) 再扫 exe / dll 中的前几个图标
+            IEnumerable<string> binFiles;
+            try
+            {
+                binFiles = Directory.EnumerateFiles(folderPath, "*.exe", SearchOption.AllDirectories)
+                    .Concat(Directory.EnumerateFiles(folderPath, "*.dll", SearchOption.AllDirectories));
             }
             catch
             {
                 return result;
             }
 
-            foreach (var exe in exeFiles)
+            foreach (var bin in binFiles)
             {
                 if (ct.IsCancellationRequested) break;
                 if (result.Count >= maxIcons) break;
 
-                foreach (var entry in ExtractFromFile(exe, 3))
+                foreach (var entry in ExtractFromFile(bin, 3))
                 {
                     if (result.Count >= maxIcons) break;
                     var hash = HashImage(entry.Image);

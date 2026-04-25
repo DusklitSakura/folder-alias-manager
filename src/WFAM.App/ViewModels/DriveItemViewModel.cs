@@ -19,6 +19,16 @@ public partial class DriveItemViewModel : ObservableObject
     [ObservableProperty] private IconEntry? _selectedIcon;
     [ObservableProperty] private AutorunInfInfo? _originalInf;
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasBackground))]
+    [NotifyPropertyChangedFor(nameof(BackgroundDisplayName))]
+    private string? _backgroundImage;
+
+    public bool HasBackground => !string.IsNullOrWhiteSpace(BackgroundImage);
+    public string BackgroundDisplayName => string.IsNullOrEmpty(BackgroundImage)
+        ? string.Empty
+        : System.IO.Path.GetFileName(BackgroundImage);
+
     public ObservableCollection<IconEntry> AvailableIcons { get; } = new();
 
     public static DriveItemViewModel Create(
@@ -48,6 +58,7 @@ public partial class DriveItemViewModel : ObservableObject
                 ? (string.IsNullOrEmpty(snapshot.VolumeLabel) ? string.Empty : snapshot.VolumeLabel)
                 : inf.Label!,
             OriginalInf = inf,
+            BackgroundImage = inf.BackgroundImage,
         };
         foreach (var ic in icons) vm.AvailableIcons.Add(ic);
 

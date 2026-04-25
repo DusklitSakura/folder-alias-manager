@@ -28,16 +28,20 @@ public sealed class DesktopIniService : IDesktopIniService
         }
         if (lines is null) return new DesktopIniInfo(null, null, 0);
 
-        string? alias = null, iconPath = null;
+        string? alias = null, iconPath = null, background = null;
         var iconIndex = 0;
-        var inSection = false;
+        var section = string.Empty;
 
         foreach (var raw in lines)
         {
             var line = raw.Trim();
-            if (line.Equals("[.ShellClassInfo]", StringComparison.OrdinalIgnoreCase)) inSection = true;
-            else if (line.StartsWith('[') && line.EndsWith(']')) inSection = false;
-            else if (inSection)
+            if (line.StartsWith('[') && line.EndsWith(']'))
+            {
+                section = line;
+                continue;
+            }
+
+            if (section.Equals("[.ShellClassInfo]", StringComparison.OrdinalIgnoreCase))
             {
                 if (line.StartsWith("LocalizedResourceName=", StringComparison.OrdinalIgnoreCase))
                     alias = line["LocalizedResourceName=".Length..];
@@ -53,13 +57,18 @@ public sealed class DesktopIniService : IDesktopIniService
                     else iconPath = value;
                 }
             }
+            else if (section.Equals(BackgroundSection, StringComparison.OrdinalIgnoreCase))
+            {
+                if (line.StartsWith("IconArea_Image=", StringComparison.OrdinalIgnoreCase))
+                    background = line["IconArea_Image=".Length..];
+            }
         }
-        return new DesktopIniInfo(alias, iconPath, iconIndex);
+        return new DesktopIniInfo(alias, iconPath, iconIndex, background);
     }
 
-    public Task<WriteResult> WriteAsync(string folderPath, string alias, string? iconPath, int iconIndex, CancellationToken ct = default)
+    public Task<WriteResult> WriteAsync(string folderPath, string alias, string? iconPath, int iconIndex, string? backgroundImage, CancellationToken ct = default)
     {
-        return Task.Run(() => WriteCore(folderPath, alias, iconPath, iconIndex), ct);
+        return Task.Run(() => WriteCore(folderPath, alias, iconPath, iconIndex, backgroundImage), ct);
     }
 
     public Task<WriteResult> RestoreAsync(string folderPath, CancellationToken ct = default)
@@ -73,6 +82,7 @@ public sealed class DesktopIniService : IDesktopIniService
         if (!Directory.Exists(folderPath))
             return new WriteResult(folderPath, name, WriteOutcome.Failed, "目录不存在");
         var iniPath = Path.Combine(folderPath, "desktop.ini");
+        var stagedIco = Path.Combine(folderPath, Helpers.IconStaging.CopiedFileName);
         RunAttrib($"-r \"{folderPath}\"");
         if (File.Exists(iniPath))
         {
@@ -81,10 +91,17 @@ public sealed class DesktopIniService : IDesktopIniService
             catch (UnauthorizedAccessException ex) { return new WriteResult(folderPath, name, WriteOutcome.AccessDenied, ex.Message); }
             catch (IOException ex) { return new WriteResult(folderPath, name, WriteOutcome.Failed, ex.Message); }
         }
+        if (File.Exists(stagedIco))
+        {
+            RunAttrib($"-r -h -s -a \"{stagedIco}\"");
+            try { File.Delete(stagedIco); }
+            catch (UnauthorizedAccessException ex) { return new WriteResult(folderPath, name, WriteOutcome.AccessDenied, ex.Message); }
+            catch (IOException ex) { return new WriteResult(folderPath, name, WriteOutcome.Failed, ex.Message); }
+        }
         return new WriteResult(folderPath, name, WriteOutcome.Success);
     }
 
-    private static WriteResult WriteCore(string folderPath, string alias, string? iconPath, int iconIndex)
+    private static WriteResult WriteCore(string folderPath, string alias, string? iconPath, int iconIndex, string? backgroundImage)
     {
         var name = Path.GetFileName(folderPath);
         if (!Directory.Exists(folderPath))
@@ -109,6 +126,7 @@ public sealed class DesktopIniService : IDesktopIniService
         }
 
         var output = MergeLines(lines, alias, iconPath, iconIndex);
+        output = MergeBackground(output, backgroundImage);
 
         try
         {
@@ -206,6 +224,53 @@ public sealed class DesktopIniService : IDesktopIniService
         yield return Encoding.UTF8;
         yield return Encoding.Unicode;
         yield return Encoding.BigEndianUnicode;
+    }
+
+    // ---- 自定义背景（[ExtShellFolderViews] / [{BE098140-...}].IconArea_Image） ----
+
+    private const string ExtShellSection = "[ExtShellFolderViews]";
+    private const string BackgroundGuid = "{BE098140-A513-11D0-A3A4-00C04FD706EC}";
+    private const string BackgroundSection = "[" + BackgroundGuid + "]";
+
+    /// <summary>
+    /// 重新构造 [ExtShellFolderViews] 与 [{BE098140-...}] 两段：
+    /// 若 <paramref name="backgroundImage"/> 为空（null/空字符串）则把这两段移除（恢复默认背景）；
+    /// 否则把已有段替换为最新内容（IconArea_Image=...）。
+    /// </summary>
+    internal static List<string> MergeBackground(List<string> input, string? backgroundImage)
+    {
+        // 先剔除原有的两段
+        var stripped = new List<string>(input.Count);
+        var section = string.Empty;
+        foreach (var raw in input)
+        {
+            var trimmed = raw.Trim();
+            if (trimmed.StartsWith('[') && trimmed.EndsWith(']'))
+            {
+                section = trimmed;
+                if (section.Equals(ExtShellSection, StringComparison.OrdinalIgnoreCase) ||
+                    section.Equals(BackgroundSection, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                stripped.Add(raw);
+                continue;
+            }
+            if (section.Equals(ExtShellSection, StringComparison.OrdinalIgnoreCase) ||
+                section.Equals(BackgroundSection, StringComparison.OrdinalIgnoreCase))
+                continue;
+            stripped.Add(raw);
+        }
+
+        if (string.IsNullOrEmpty(backgroundImage))
+            return stripped;
+
+        if (stripped.Count > 0 && !string.IsNullOrWhiteSpace(stripped[^1]))
+            stripped.Add(string.Empty);
+        stripped.Add(ExtShellSection);
+        stripped.Add($"{BackgroundGuid}={BackgroundGuid}");
+        stripped.Add(BackgroundSection);
+        stripped.Add("Attributes=1");
+        stripped.Add($"IconArea_Image={backgroundImage}");
+        return stripped;
     }
 
     private static Encoding SystemAnsiEncoding

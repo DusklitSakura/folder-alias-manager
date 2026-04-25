@@ -17,7 +17,7 @@ public interface IDesktopIniService
     /// <item><see cref="WriteOutcome.Failed"/> — 其他 IO 错误（Message 会携带具体原因）</item>
     /// </list>
     /// </summary>
-    Task<WriteResult> WriteAsync(string folderPath, string alias, string? iconPath, int iconIndex, CancellationToken ct = default);
+    Task<WriteResult> WriteAsync(string folderPath, string alias, string? iconPath, int iconIndex, string? backgroundImage, CancellationToken ct = default);
 
     /// <summary>
     /// 恢复默认：删除 desktop.ini 并去掉文件夹的只读属性。

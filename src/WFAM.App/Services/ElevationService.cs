@@ -37,6 +37,7 @@ public sealed class ElevationService : IElevationService
                 Alias = i.Alias,
                 IconPath = i.IconPath ?? string.Empty,
                 IconIndex = i.IconIndex,
+                BackgroundImage = i.BackgroundImage ?? string.Empty,
                 Restore = i.Restore,
             }).ToList(),
         };
@@ -142,6 +143,7 @@ public sealed class ElevationService : IElevationService
                 Label = i.Label,
                 StagedIconPath = i.StagedIconPath ?? string.Empty,
                 IconTargetName = i.IconTargetName,
+                BackgroundImage = i.BackgroundImage ?? string.Empty,
                 Restore = i.Restore,
             }).ToList(),
         };
@@ -206,6 +208,7 @@ public sealed class ElevationService : IElevationService
         [JsonPropertyName("icon_path")] public string IconPath { get; set; } = string.Empty;
         [JsonPropertyName("icon_index")] public int IconIndex { get; set; }
         [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("background_image")] public string BackgroundImage { get; set; } = string.Empty;
         [JsonPropertyName("restore")] public bool Restore { get; set; }
     }
     private sealed class BatchOutput
@@ -234,6 +237,7 @@ public sealed class ElevationService : IElevationService
         [JsonPropertyName("label")] public string Label { get; set; } = string.Empty;
         [JsonPropertyName("staged_icon_path")] public string StagedIconPath { get; set; } = string.Empty;
         [JsonPropertyName("icon_target_name")] public string IconTargetName { get; set; } = string.Empty;
+        [JsonPropertyName("background_image")] public string BackgroundImage { get; set; } = string.Empty;
         [JsonPropertyName("restore")] public bool Restore { get; set; }
     }
 }

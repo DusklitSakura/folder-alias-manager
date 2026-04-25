@@ -3,6 +3,7 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using WFAM.App.Helpers;
 using WFAM.App.Models;
 using WFAM.App.Services;
 
@@ -22,6 +23,7 @@ public partial class EditFolderViewModel : ObservableObject
     private readonly IFolderPickerService _picker;
     private readonly IHistoryService _history;
     private readonly ILocalizationService _loc;
+    private readonly ISettingsService _settings;
     private readonly ILogger<EditFolderViewModel> _logger;
 
     public EditFolderViewModel(
@@ -33,10 +35,12 @@ public partial class EditFolderViewModel : ObservableObject
         IFolderPickerService picker,
         IHistoryService history,
         ILocalizationService loc,
+        ISettingsService settings,
         ILogger<EditFolderViewModel> logger)
     {
         _ini = ini; _icons = icons; _elevation = elevation; _shell = shell;
-        _notify = notify; _picker = picker; _history = history; _loc = loc; _logger = logger;
+        _notify = notify; _picker = picker; _history = history; _loc = loc;
+        _settings = settings; _logger = logger;
     }
 
     [ObservableProperty] private FolderItemViewModel? _item;
@@ -79,6 +83,22 @@ public partial class EditFolderViewModel : ObservableObject
         }
         Item.AvailableIcons.Add(entry);
         Item.SelectedIcon = entry;
+    }
+
+    [RelayCommand]
+    private void PickBackground()
+    {
+        if (Item is null) return;
+        var f = _picker.PickImageFile();
+        if (string.IsNullOrEmpty(f)) return;
+        Item.BackgroundImage = f;
+    }
+
+    [RelayCommand]
+    private void ClearBackground()
+    {
+        if (Item is null) return;
+        Item.BackgroundImage = null;
     }
 
     [RelayCommand]
@@ -142,10 +162,11 @@ public partial class EditFolderViewModel : ObservableObject
         try
         {
             BusyMessage = _loc["Edit.Saving"];
-            var iconPath = Item.SelectedIcon is { IsDefault: false } e ? e.SourcePath : null;
-            var iconIdx = Item.SelectedIcon is { IsDefault: false } e2 ? e2.Index : 0;
+            var rawIconPath = Item.SelectedIcon is { IsDefault: false } e ? e.SourcePath : null;
+            var rawIconIdx = Item.SelectedIcon is { IsDefault: false } e2 ? e2.Index : 0;
+            var (iconPath, iconIdx) = IconStaging.ResolveIconPath(Item.Path, rawIconPath, rawIconIdx, _settings.Current.CopyIconToFolder);
 
-            var result = await _ini.WriteAsync(Item.Path, Item.Alias, iconPath, iconIdx);
+            var result = await _ini.WriteAsync(Item.Path, Item.Alias, iconPath, iconIdx, Item.BackgroundImage);
             string? failMessage = result.Outcome == WriteOutcome.Success ? null : result.Message;
 
             if (result.Outcome == WriteOutcome.AccessDenied)
@@ -158,7 +179,7 @@ public partial class EditFolderViewModel : ObservableObject
                 BusyMessage = _loc["Edit.WaitingUac"];
                 var results = await _elevation.ElevatedBatchWriteAsync(new[]
                 {
-                    new ElevatedWriteRequest(Item.Path, Item.Name, Item.Alias, iconPath, iconIdx),
+                    new ElevatedWriteRequest(Item.Path, Item.Name, Item.Alias, iconPath, iconIdx, Item.BackgroundImage),
                 });
                 if (results.Count == 0)
                 {

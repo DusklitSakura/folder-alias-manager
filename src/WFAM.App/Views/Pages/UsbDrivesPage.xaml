@@ -98,6 +98,7 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
 
                                         <!-- 上排：图标预览 + 盘符/容量 -->
@@ -173,6 +174,43 @@
                                                                              RelativeSource={RelativeSource AncestorType=Page}}"
                                                            CommandParameter="{Binding}"
                                                            Margin="0,0,4,0" />
+                                                <ui:Button Icon="{ui:SymbolIcon ImageMultiple24}"
+                                                           Appearance="Secondary"
+                                                           ToolTip="{loc:Tr Background.Tip.Pick}"
+                                                           Command="{Binding DataContext.PickBackgroundCommand,
+                                                                             RelativeSource={RelativeSource AncestorType=Page}}"
+                                                           CommandParameter="{Binding}"
+                                                           Margin="0,0,4,0" />
+                                                <ui:Button Icon="{ui:SymbolIcon ImageOff24}"
+                                                           Appearance="Secondary"
+                                                           ToolTip="{loc:Tr Background.Tip.Clear}"
+                                                           Command="{Binding DataContext.ClearBackgroundCommand,
+                                                                             RelativeSource={RelativeSource AncestorType=Page}}"
+                                                           CommandParameter="{Binding}"
+                                                           IsEnabled="{Binding HasBackground}"
+                                                           Margin="0,0,4,0" />
+
+                                        <!-- 背景预览 -->
+                                        <StackPanel Grid.Row="2"
+                                                    Orientation="Horizontal"
+                                                    Margin="0,8,0,0"
+                                                    Visibility="{Binding HasBackground, Converter={StaticResource BoolToVis}}">
+                                            <ui:SymbolIcon Symbol="ImageMultiple24"
+                                                           FontSize="14"
+                                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                           VerticalAlignment="Center"
+                                                           Margin="0,0,6,0" />
+                                            <ui:TextBlock Text="{loc:Tr Background.Label}"
+                                                          FontTypography="Caption"
+                                                          Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                          VerticalAlignment="Center"
+                                                          Margin="0,0,4,0" />
+                                            <ui:TextBlock Text="{Binding BackgroundDisplayName}"
+                                                          FontTypography="Caption"
+                                                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                          TextTrimming="CharacterEllipsis"
+                                                          VerticalAlignment="Center" />
+                                        </StackPanel>
                                                 <ui:Button Icon="{ui:SymbolIcon ArrowReset24}"
                                                            Appearance="Secondary"
                                                            ToolTip="{loc:Tr Drives.Tip.RestoreDefault}"

@@ -17,58 +17,89 @@ public sealed class AutorunInfService : IAutorunInfService
     public async Task<AutorunInfInfo> ReadAsync(string drivePath, CancellationToken ct = default)
     {
         var iniPath = Path.Combine(drivePath, "autorun.inf");
-        if (!File.Exists(iniPath))
-            return new AutorunInfInfo(null, null, 0);
-
-        string[]? lines = null;
-        foreach (var enc in CandidateEncodings())
-        {
-            try
-            {
-                lines = await File.ReadAllLinesAsync(iniPath, enc, ct).ConfigureAwait(false);
-                break;
-            }
-            catch (DecoderFallbackException) { /* try next */ }
-            catch (IOException) { return new AutorunInfInfo(null, null, 0); }
-        }
-        if (lines is null) return new AutorunInfInfo(null, null, 0);
-
         string? label = null, iconPath = null;
         var iconIndex = 0;
-        var inSection = false;
 
-        foreach (var raw in lines)
+        if (File.Exists(iniPath))
         {
-            var line = raw.Trim();
-            if (line.Equals("[autorun]", StringComparison.OrdinalIgnoreCase)) inSection = true;
-            else if (line.StartsWith('[') && line.EndsWith(']')) inSection = false;
-            else if (inSection)
+            string[]? lines = null;
+            foreach (var enc in CandidateEncodings())
             {
-                if (line.StartsWith("label=", StringComparison.OrdinalIgnoreCase))
-                    label = line["label=".Length..];
-                else if (line.StartsWith("icon=", StringComparison.OrdinalIgnoreCase))
+                try
                 {
-                    var value = line["icon=".Length..];
-                    var commaIdx = value.LastIndexOf(',');
-                    if (commaIdx > 0)
+                    lines = await File.ReadAllLinesAsync(iniPath, enc, ct).ConfigureAwait(false);
+                    break;
+                }
+                catch (DecoderFallbackException) { /* try next */ }
+                catch (IOException) { lines = null; break; }
+            }
+            if (lines is not null)
+            {
+                var inSection = false;
+                foreach (var raw in lines)
+                {
+                    var line = raw.Trim();
+                    if (line.Equals("[autorun]", StringComparison.OrdinalIgnoreCase)) inSection = true;
+                    else if (line.StartsWith('[') && line.EndsWith(']')) inSection = false;
+                    else if (inSection)
                     {
-                        iconPath = value[..commaIdx];
-                        int.TryParse(value[(commaIdx + 1)..], out iconIndex);
+                        if (line.StartsWith("label=", StringComparison.OrdinalIgnoreCase))
+                            label = line["label=".Length..];
+                        else if (line.StartsWith("icon=", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var value = line["icon=".Length..];
+                            var commaIdx = value.LastIndexOf(',');
+                            if (commaIdx > 0)
+                            {
+                                iconPath = value[..commaIdx];
+                                int.TryParse(value[(commaIdx + 1)..], out iconIndex);
+                            }
+                            else iconPath = value;
+                        }
                     }
-                    else iconPath = value;
                 }
             }
         }
-        return new AutorunInfInfo(label, iconPath, iconIndex);
+
+        // 同时读取盘符根 desktop.ini 中的 IconArea_Image 字段（背景）
+        var background = await ReadDriveBackgroundAsync(drivePath, ct).ConfigureAwait(false);
+        return new AutorunInfInfo(label, iconPath, iconIndex, background);
     }
 
-    public Task<WriteResult> WriteAsync(string drivePath, string label, string? stagedIcoPath, CancellationToken ct = default)
-        => Task.Run(() => WriteCore(drivePath, label, stagedIcoPath), ct);
+    private static async Task<string?> ReadDriveBackgroundAsync(string drivePath, CancellationToken ct)
+    {
+        var deskIni = Path.Combine(drivePath, "desktop.ini");
+        if (!File.Exists(deskIni)) return null;
+        string[]? lines = null;
+        foreach (var enc in CandidateEncodings())
+        {
+            try { lines = await File.ReadAllLinesAsync(deskIni, enc, ct).ConfigureAwait(false); break; }
+            catch (DecoderFallbackException) { /* try next */ }
+            catch (IOException) { return null; }
+        }
+        if (lines is null) return null;
+        var inBg = false;
+        foreach (var raw in lines)
+        {
+            var line = raw.Trim();
+            if (line.StartsWith('[') && line.EndsWith(']'))
+            {
+                inBg = line.Equals("[{BE098140-A513-11D0-A3A4-00C04FD706EC}]", StringComparison.OrdinalIgnoreCase);
+                continue;
+            }
+            if (inBg && line.StartsWith("IconArea_Image=", StringComparison.OrdinalIgnoreCase))
+                return line["IconArea_Image=".Length..];
+        }
+        return null;
+    }
+
+    public Task<WriteResult> WriteAsync(string drivePath, string label, string? stagedIcoPath, string? backgroundImage, CancellationToken ct = default)
+        => Task.Run(() => WriteCore(drivePath, label, stagedIcoPath, backgroundImage), ct);
 
     public Task<WriteResult> RestoreAsync(string drivePath, CancellationToken ct = default)
         => Task.Run(() => RestoreCore(drivePath), ct);
 
-    private WriteResult WriteCore(string drivePath, string label, string? stagedIcoPath)
+    private WriteResult WriteCore(string drivePath, string label, string? stagedIcoPath, string? backgroundImage)
     {
         var name = DescribeDrive(drivePath);
         if (!Directory.Exists(drivePath))
@@ -134,7 +165,54 @@ public sealed class AutorunInfService : IAutorunInfService
         }
 
         RunAttrib($"+h +s \"{iniPath}\"");
+
+        // 同步维护盘符根 desktop.ini（仅 background 段）。
+        var bgResult = WriteDriveBackground(drivePath, backgroundImage);
+        if (bgResult is not null) return bgResult with { Name = name };
+
         return new WriteResult(drivePath, name, WriteOutcome.Success);
+    }
+
+    private static WriteResult? WriteDriveBackground(string drivePath, string? backgroundImage)
+    {
+        var deskIni = Path.Combine(drivePath, "desktop.ini");
+        var deskTmp = Path.Combine(drivePath, "desktop.tmp");
+
+        if (File.Exists(deskIni)) RunAttrib($"-r -h -s \"{deskIni}\"");
+
+        var encoding = SystemAnsiEncoding;
+        var lines = new List<string>();
+        if (File.Exists(deskIni))
+        {
+            foreach (var enc in CandidateEncodings())
+            {
+                try { lines = File.ReadAllLines(deskIni, enc).ToList(); encoding = enc; break; }
+                catch { /* try next */ }
+            }
+        }
+
+        var output = DesktopIniService.MergeBackground(lines, backgroundImage);
+
+        // 全文为空（无 alias/icon 也无 background）→ 直接删掉 desktop.ini
+        if (output.Count == 0 || output.All(string.IsNullOrWhiteSpace))
+        {
+            try { if (File.Exists(deskIni)) File.Delete(deskIni); }
+            catch (UnauthorizedAccessException ex) { return new WriteResult(drivePath, drivePath, WriteOutcome.AccessDenied, ex.Message); }
+            catch (IOException ex) { return new WriteResult(drivePath, drivePath, WriteOutcome.Failed, ex.Message); }
+            return null;
+        }
+
+        try
+        {
+            File.WriteAllLines(deskTmp, output, encoding);
+            if (File.Exists(deskIni)) File.Delete(deskIni);
+            File.Move(deskTmp, deskIni);
+        }
+        catch (UnauthorizedAccessException ex) { TryDelete(deskTmp); return new WriteResult(drivePath, drivePath, WriteOutcome.AccessDenied, ex.Message); }
+        catch (IOException ex) { TryDelete(deskTmp); return new WriteResult(drivePath, drivePath, WriteOutcome.Failed, ex.Message); }
+
+        RunAttrib($"+h +s \"{deskIni}\"");
+        return null;
     }
 
     private WriteResult RestoreCore(string drivePath)
@@ -145,6 +223,7 @@ public sealed class AutorunInfService : IAutorunInfService
 
         var iniPath = Path.Combine(drivePath, "autorun.inf");
         var iconPath = Path.Combine(drivePath, DriveIconFileName);
+        var deskIni = Path.Combine(drivePath, "desktop.ini");
 
         try
         {
@@ -157,6 +236,11 @@ public sealed class AutorunInfService : IAutorunInfService
             {
                 RunAttrib($"-r -h -s \"{iconPath}\"");
                 File.Delete(iconPath);
+            }
+            if (File.Exists(deskIni))
+            {
+                RunAttrib($"-r -h -s \"{deskIni}\"");
+                File.Delete(deskIni);
             }
         }
         catch (UnauthorizedAccessException ex)

@@ -198,6 +198,26 @@ internal static class SecurityGuard
         return full;
     }
 
+    /// <summary>
+    /// 校验自定义背景图片字面量。
+    /// helper 不会打开图片，只把它作为字符串写进 desktop.ini，因此安全要求很轻：
+    /// 仅过滤换行/INI 控制字符，限制长度，并禁止隐含控制字符；空字符串视为「清除背景」。
+    /// </summary>
+    public static bool IsValidBackgroundImagePath(string? value, out string reason)
+    {
+        reason = string.Empty;
+        if (string.IsNullOrEmpty(value)) return true; // 空 → 清除背景
+        if (value.Length > 512) { reason = "路径过长"; return false; }
+        foreach (var ch in value)
+        {
+            if (ch is '\r' or '\n' or '\0' or '[' or ']')
+            { reason = $"非法字符: {ch}"; return false; }
+            if (char.IsControl(ch))
+            { reason = "包含控制字符"; return false; }
+        }
+        return true;
+    }
+
     // ---- helpers ----
 
     private static void EnsureUnderUserTemp(string fullPath)
