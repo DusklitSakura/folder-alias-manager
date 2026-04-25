@@ -1,5 +1,12 @@
 # WFAM · Windows Folder Alias Manager
 
+Fork for thx114's https://github.com/thx114/folder-alias-manager
+
+二次修改于 thx114 的https://github.com/thx114/folder-alias-manager
+
+修改desktop.ini来更改图标和别名，适合我这种强迫症喵
+修改desktop.ini来更改图标和别名，适合我这种强迫症喵
+
 [简体中文](#简体中文) | [English](#english)
 
 ---
