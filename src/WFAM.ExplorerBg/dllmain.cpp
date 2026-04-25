@@ -12,6 +12,8 @@
 #include <mutex>
 #include <string>
 #include <algorithm>
+#include <thread>
+#include <atomic>
 
 #pragma comment(lib, "msimg32.lib")
 
@@ -27,13 +29,18 @@ static const wchar_t* kBgSection = L"{BE098140-A513-11D0-A3A4-00C04FD706EC}";
 // 全局状态：每个 DUI 容器的绘制上下文
 // ============================================================
 struct DuiData {
-    HDC  hdc      = nullptr;
-    SIZE size     = { 0, 0 };
-    HWND topHwnd  = nullptr; // 对应的 CabinetWClass 顶层窗口（用于查路径）
+    HDC  hdc          = nullptr;
+    SIZE size         = { 0, 0 };
+    SIZE lastClient   = { 0, 0 }; // resize 监视用的客户区尺寸
+    HWND topHwnd      = nullptr;  // 对应的 CabinetWClass 顶层窗口（用于查路径）
 };
 
 static std::unordered_map<HWND, DuiData> s_duiMap; // DUI hwnd → ctx
 static std::mutex                        s_duiMutex;
+
+// resize 监视线程
+static std::thread        s_resizeThread;
+static std::atomic<bool>  s_resizeQuit{false};
 
 // path → 已加载位图（同一图片只加载一份）
 static std::unordered_map<std::wstring, wfam::GdiBitmap*> s_bgCache;
@@ -239,6 +246,38 @@ static int WINAPI MyFillRect(HDC hDC, const RECT* lprc, HBRUSH hbr) {
 // ============================================================
 // 安装 / 卸载
 // ============================================================
+// ============================================================
+// resize 监视：发现某个 DUI 客户区尺寸变化 → InvalidateRect 强制整体重绘。
+// 解决两个问题：
+//   1) 拉伸窗口时背景不会跟随窗口实时缩放（Explorer 只增量重绘新增条带）。
+//   2) 改变窗口大小后旧画面残留在标题栏 / 工具栏附近。
+// ============================================================
+static void ResizeWatcher() {
+    while (!s_resizeQuit.load()) {
+        std::vector<std::pair<HWND, SIZE>> toInvalidate;
+        {
+            std::lock_guard<std::mutex> lk(s_duiMutex);
+            for (auto& kv : s_duiMap) {
+                HWND dui = kv.first;
+                if (!IsWindow(dui)) continue;
+                RECT rc{};
+                if (!GetClientRect(dui, &rc)) continue;
+                SIZE cur = { rc.right - rc.left, rc.bottom - rc.top };
+                if (cur.cx <= 0 || cur.cy <= 0) continue;
+                if (cur.cx != kv.second.lastClient.cx || cur.cy != kv.second.lastClient.cy) {
+                    kv.second.lastClient = cur;
+                    toInvalidate.emplace_back(dui, cur);
+                }
+            }
+        }
+        for (auto& p : toInvalidate) {
+            // FALSE：不擦背景（避免闪烁），让 Explorer 自身的 FillRect 触发我们的绘制。
+            InvalidateRect(p.first, nullptr, FALSE);
+        }
+        Sleep(80);
+    }
+}
+
 static void InstallHooks() {
     if (s_hookInstalled) return;
     s_hookInstalled = true;
@@ -255,6 +294,8 @@ static void InstallHooks() {
     MH_EnableHook(MH_ALL_HOOKS);
 
     wfam::StartPathSync();
+    s_resizeQuit.store(false);
+    s_resizeThread = std::thread(ResizeWatcher);
     wfam::Log(L"hooks installed");
 }
 
@@ -289,6 +330,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID) {
         }
     } else if (reason == DLL_PROCESS_DETACH) {
         if (s_inExplorer) {
+            s_resizeQuit.store(true);
+            if (s_resizeThread.joinable()) s_resizeThread.detach();
             wfam::StopPathSync();
         }
         std::lock_guard<std::mutex> lk(s_bgMutex);
