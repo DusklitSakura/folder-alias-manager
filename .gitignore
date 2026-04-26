@@ -6,6 +6,7 @@
 [Ll]ogs/
 artifacts/
 publish/
+build/
 
 # --- Visual Studio / Rider / VS Code ---
 .vs/
