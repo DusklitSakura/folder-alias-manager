@@ -106,40 +106,47 @@ public partial class SettingsViewModel : ObservableObject
 
     // ---------- 右键菜单 ----------
     [ObservableProperty] private bool _isContextMenuRegistered;
+    [ObservableProperty] private bool _isContextMenuBusy;
 
-    [RelayCommand]
-    private void RegisterContextMenu()
+    partial void OnIsContextMenuRegisteredChanged(bool value)
     {
+        if (_suppressPersist) return;
+        // 避免在同一个 setter 里反向赋值重入
+        _suppressPersist = true;
         try
         {
-            var label = _localization["Settings.ContextMenu.MenuLabel"];
-            _contextMenu.Register(label);
-            IsContextMenuRegistered = true;
-            _notify.Success(_localization["Common.Success"], _localization["Notify.ContextMenu.Registered"]);
+            ApplyContextMenuToggle(value);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "注册右键菜单失败");
-            _notify.Warning(_localization["Common.Failed"],
-                string.Format(_localization["Notify.ContextMenu.Failed"], ex.Message));
-        }
+        finally { _suppressPersist = false; }
     }
 
-    [RelayCommand]
-    private void UnregisterContextMenu()
+    private void ApplyContextMenuToggle(bool enable)
     {
+        if (IsContextMenuBusy) return;
+        IsContextMenuBusy = true;
         try
         {
-            _contextMenu.Unregister();
-            IsContextMenuRegistered = false;
-            _notify.Success(_localization["Common.Success"], _localization["Notify.ContextMenu.Unregistered"]);
+            if (enable)
+            {
+                var label = _localization["Settings.ContextMenu.MenuLabel"];
+                _contextMenu.Register(label);
+                _notify.Success(_localization["Common.Success"], _localization["Notify.ContextMenu.Registered"]);
+            }
+            else
+            {
+                _contextMenu.Unregister();
+                _notify.Success(_localization["Common.Success"], _localization["Notify.ContextMenu.Unregistered"]);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "取消右键菜单失败");
+            _logger.LogError(ex, "右键菜单切换失败");
             _notify.Warning(_localization["Common.Failed"],
                 string.Format(_localization["Notify.ContextMenu.Failed"], ex.Message));
+            // 回滚开关状态为实际注册状态
+            IsContextMenuRegistered = _contextMenu.IsRegistered;
         }
+        finally { IsContextMenuBusy = false; }
     }
 
     private static ThemeMode ParseThemeMode(string s)
@@ -234,6 +241,7 @@ public partial class SettingsViewModel : ObservableObject
 
     public bool CanInstallExplorerBg => ExplorerBgDllAvailable && !IsExplorerBgBusy && !ExplorerBgInstalled;
     public bool CanUninstallExplorerBg => !IsExplorerBgBusy && ExplorerBgInstalled;
+    public bool CanToggleExplorerBg => ExplorerBgDllAvailable && !IsExplorerBgBusy;
 
     partial void OnExplorerBgInstalledChanged(bool value)
     {
@@ -242,37 +250,37 @@ public partial class SettingsViewModel : ObservableObject
         if (_suppressPersist) return;
         _settings.Current.ExplorerBgInstalled = value;
         _settings.Save();
+        // 开关触发的实际启/停
+        _ = ApplyExplorerBgToggleAsync(value);
     }
     partial void OnExplorerBgDllAvailableChanged(bool value)
-        => OnPropertyChanged(nameof(CanInstallExplorerBg));
+    {
+        OnPropertyChanged(nameof(CanInstallExplorerBg));
+        OnPropertyChanged(nameof(CanToggleExplorerBg));
+    }
     partial void OnIsExplorerBgBusyChanged(bool value)
     {
         OnPropertyChanged(nameof(CanInstallExplorerBg));
         OnPropertyChanged(nameof(CanUninstallExplorerBg));
+        OnPropertyChanged(nameof(CanToggleExplorerBg));
     }
 
-    [RelayCommand]
-    private async Task InstallExplorerBgAsync()
+    private async Task ApplyExplorerBgToggleAsync(bool enable)
     {
         if (_bg is null || IsExplorerBgBusy) return;
         IsExplorerBgBusy = true;
         try
         {
-            var r = await Task.Run(() => _bg.Enable());
-            HandleExplorerBgResult(r, install: true);
-        }
-        finally { IsExplorerBgBusy = false; }
-    }
-
-    [RelayCommand]
-    private async Task UninstallExplorerBgAsync()
-    {
-        if (_bg is null || IsExplorerBgBusy) return;
-        IsExplorerBgBusy = true;
-        try
-        {
-            var r = await Task.Run(() => _bg.Disable());
-            HandleExplorerBgResult(r, install: false);
+            var r = enable
+                ? await Task.Run(() => _bg.Enable())
+                : await Task.Run(() => _bg.Disable());
+            HandleExplorerBgResult(r, install: enable);
+            if (r != ExplorerBgEnableResult.Ok)
+            {
+                // 失败时回滚开关状态
+                _suppressPersist = true;
+                try { ExplorerBgInstalled = !enable; } finally { _suppressPersist = false; }
+            }
         }
         finally { IsExplorerBgBusy = false; }
     }

@@ -119,6 +119,7 @@ public sealed class LocalizationService : ILocalizationService
 
         // 设置页
         ["Settings.Title"] = "设置",
+        ["Settings.Subtitle"] = "在这里调整外观、语言、系统集成与更新选项。",
         ["Settings.Group.Appearance"] = "外观",
         ["Settings.Theme"] = "主题",
         ["Settings.Theme.Description"] = "切换浅色 / 深色 / 高对比度主题，或跟随系统。",
@@ -313,6 +314,7 @@ public sealed class LocalizationService : ILocalizationService
         ["DriveType.Unknown"] = "Unknown",
 
         ["Settings.Title"] = "Settings",
+        ["Settings.Subtitle"] = "Customize appearance, language, system integration and updates.",
         ["Settings.Group.Appearance"] = "Appearance",
         ["Settings.Theme"] = "Theme",
         ["Settings.Theme.Description"] = "Light / Dark / High Contrast, or follow the system.",

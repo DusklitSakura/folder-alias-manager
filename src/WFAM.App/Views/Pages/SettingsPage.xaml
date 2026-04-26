@@ -11,195 +11,172 @@
       Title="{loc:Tr Settings.Title}"
       Background="Transparent">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="36,18,36,24">
+        <StackPanel Margin="28,16,28,20">
 
-            <!-- 外观 -->
-            <ui:TextBlock Text="{loc:Tr Settings.Group.Appearance}"
-                          FontTypography="Subtitle" Margin="0,0,0,12" />
+            <!-- ========== 顶部：页头 ========== -->
+            <ui:TextBlock Text="{loc:Tr Settings.Title}"
+                          FontTypography="TitleLarge" Margin="0,0,0,4" />
+            <ui:TextBlock Text="{loc:Tr Settings.Subtitle}"
+                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                          TextWrapping="Wrap"
+                          Margin="0,0,0,18" />
 
-            <ui:CardControl Margin="0,0,0,24">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock Text="{loc:Tr Settings.Theme}" FontTypography="BodyStrong" />
-                        <ui:TextBlock Text="{loc:Tr Settings.Theme.Description}"
-                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ComboBox ItemsSource="{Binding AvailableThemes}"
-                          SelectedItem="{Binding CurrentTheme, Mode=TwoWay}"
-                          DisplayMemberPath="DisplayName"
-                          Width="220" />
-            </ui:CardControl>
+            <!-- ========== 中部双列 ========== -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MinWidth="320" />
+                    <ColumnDefinition Width="20" />
+                    <ColumnDefinition Width="*" MinWidth="320" />
+                </Grid.ColumnDefinitions>
 
-            <!-- 语言 -->
-            <ui:TextBlock Text="{loc:Tr Settings.Group.Language}"
-                          FontTypography="Subtitle" Margin="0,0,0,12" />
+                <!-- 左列：外观 / 语言 / 更新 -->
+                <StackPanel Grid.Column="0">
 
-            <ui:CardControl Margin="0,0,0,24">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock Text="{loc:Tr Settings.Language}" FontTypography="BodyStrong" />
-                        <ui:TextBlock Text="{loc:Tr Settings.Language.Description}"
-                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ComboBox ItemsSource="{Binding AvailableLanguages}"
-                          SelectedItem="{Binding CurrentLanguage, Mode=TwoWay}"
-                          DisplayMemberPath="DisplayName"
-                          Width="200" />
-            </ui:CardControl>
+                    <!-- 外观 -->
+                    <ui:TextBlock Text="{loc:Tr Settings.Group.Appearance}"
+                                  FontTypography="Subtitle" Margin="0,0,0,10" />
 
-            <!-- 系统集成 -->
-            <ui:TextBlock Text="{loc:Tr Settings.Group.Integration}"
-                          FontTypography="Subtitle" Margin="0,0,0,12" />
+                    <ui:CardControl Margin="0,0,0,18">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <ui:TextBlock Text="{loc:Tr Settings.Theme}" FontTypography="BodyStrong" />
+                                <ui:TextBlock Text="{loc:Tr Settings.Theme.Description}"
+                                              FontTypography="Caption"
+                                              Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ComboBox ItemsSource="{Binding AvailableThemes}"
+                                  SelectedItem="{Binding CurrentTheme, Mode=TwoWay}"
+                                  DisplayMemberPath="DisplayName"
+                                  Width="180" />
+                    </ui:CardControl>
 
-            <ui:CardControl Margin="0,0,0,12">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock Text="{loc:Tr Settings.ContextMenu}" FontTypography="BodyStrong" />
-                        <ui:TextBlock Text="{loc:Tr Settings.ContextMenu.Description}"
-                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                      TextWrapping="Wrap" />
-                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                            <ui:SymbolIcon Symbol="Info16" Margin="0,0,6,0" VerticalAlignment="Center"
-                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}" />
-                            <ui:TextBlock VerticalAlignment="Center"
-                                          FontTypography="Caption"
-                                          Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                          Text="{loc:Tr Settings.ContextMenu.On}"
-                                          Visibility="{Binding IsContextMenuRegistered,
-                                                               Converter={StaticResource BoolToVis}}" />
-                            <ui:TextBlock VerticalAlignment="Center"
-                                          FontTypography="Caption"
-                                          Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                          Text="{loc:Tr Settings.ContextMenu.Off}"
-                                          Visibility="{Binding IsContextMenuRegistered,
-                                                               Converter={StaticResource InverseBoolToVis}}" />
-                        </StackPanel>
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <StackPanel Orientation="Horizontal">
-                    <ui:Button Content="{loc:Tr Settings.ContextMenu.Register}"
-                               Appearance="Primary"
-                               Icon="{ui:SymbolIcon Add24}"
-                               Command="{Binding RegisterContextMenuCommand}"
-                               Margin="0,0,8,0" />
-                    <ui:Button Content="{loc:Tr Settings.ContextMenu.Unregister}"
-                               Appearance="Secondary"
-                               Icon="{ui:SymbolIcon Delete24}"
-                               Command="{Binding UnregisterContextMenuCommand}" />
-                </StackPanel>
-            </ui:CardControl>
+                    <!-- 语言 -->
+                    <ui:TextBlock Text="{loc:Tr Settings.Group.Language}"
+                                  FontTypography="Subtitle" Margin="0,0,0,10" />
 
-            <!-- 图标存储策略 -->
-            <ui:CardControl Margin="0,0,0,12">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock Text="{loc:Tr Settings.IconCopy.Title}" FontTypography="BodyStrong" />
-                        <ui:TextBlock Text="{loc:Tr Settings.IconCopy.Description}"
-                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                      TextWrapping="Wrap" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <ui:ToggleSwitch Content="{loc:Tr Settings.IconCopy.Toggle}"
-                                 IsChecked="{Binding CopyIconToFolder, Mode=TwoWay}" />
-            </ui:CardControl>
+                    <ui:CardControl Margin="0,0,0,18">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <ui:TextBlock Text="{loc:Tr Settings.Language}" FontTypography="BodyStrong" />
+                                <ui:TextBlock Text="{loc:Tr Settings.Language.Description}"
+                                              FontTypography="Caption"
+                                              Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ComboBox ItemsSource="{Binding AvailableLanguages}"
+                                  SelectedItem="{Binding CurrentLanguage, Mode=TwoWay}"
+                                  DisplayMemberPath="DisplayName"
+                                  Width="170" />
+                    </ui:CardControl>
 
-            <!-- Explorer 背景扩展 -->
-            <ui:CardControl Margin="0,0,0,12">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock Text="{loc:Tr Settings.ExplorerBg.Title}" FontTypography="BodyStrong" />
-                        <ui:TextBlock Text="{loc:Tr Settings.ExplorerBg.Description}"
-                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                      TextWrapping="Wrap" />
-                        <ui:TextBlock Margin="0,6,0,0"
-                                      FontTypography="Caption"
-                                      Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
-                                      Text="{loc:Tr Settings.ExplorerBg.StatusInstalled}"
-                                      Visibility="{Binding ExplorerBgInstalled, Converter={StaticResource BoolToVis}}" />
-                        <ui:TextBlock Margin="0,6,0,0"
-                                      FontTypography="Caption"
-                                      Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                      Text="{loc:Tr Settings.ExplorerBg.StatusNotInstalled}"
-                                      Visibility="{Binding ExplorerBgInstalled, Converter={StaticResource InverseBoolToVis}}" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <StackPanel Orientation="Horizontal">
-                    <ui:Button Content="{loc:Tr Settings.ExplorerBg.Install}"
-                               Appearance="Primary"
-                               Icon="{ui:SymbolIcon Add24}"
-                               Margin="0,0,8,0"
-                               Command="{Binding InstallExplorerBgCommand}"
-                               IsEnabled="{Binding CanInstallExplorerBg}" />
-                    <ui:Button Content="{loc:Tr Settings.ExplorerBg.Uninstall}"
-                               Appearance="Secondary"
-                               Icon="{ui:SymbolIcon Delete24}"
-                               Command="{Binding UninstallExplorerBgCommand}"
-                               IsEnabled="{Binding CanUninstallExplorerBg}" />
-                </StackPanel>
-            </ui:CardControl>
+                    <!-- 更新 -->
+                    <ui:TextBlock Text="{loc:Tr Settings.Group.Update}"
+                                  FontTypography="Subtitle" Margin="0,0,0,10" />
 
-            <!-- 更新 -->
-            <ui:TextBlock Text="{loc:Tr Settings.Group.Update}"
-                          FontTypography="Subtitle" Margin="0,12,0,12" />
+                    <ui:CardControl Margin="0,0,0,8">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:TextBlock Text="{loc:Tr Settings.Update}" FontTypography="BodyStrong" />
+                                    <ui:TextBlock FontTypography="Caption"
+                                                  Margin="8,0,0,0"
+                                                  VerticalAlignment="Center"
+                                                  Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                                  Text="{Binding CurrentVersionText, Mode=OneWay}" />
+                                </StackPanel>
+                                <ui:TextBlock Text="{loc:Tr Settings.Update.Description}"
+                                              FontTypography="Caption"
+                                              Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                              TextWrapping="Wrap" />
+                                <ui:TextBlock Text="{Binding UpdateStatusText, Mode=OneWay}"
+                                              FontTypography="Caption"
+                                              Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
+                                              TextWrapping="Wrap"
+                                              Margin="0,4,0,0" />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ui:ToggleSwitch IsChecked="{Binding AutoCheckUpdate, Mode=TwoWay}" />
+                    </ui:CardControl>
 
-            <ui:CardControl Margin="0,0,0,12">
-                <ui:CardControl.Header>
-                    <StackPanel>
-                        <ui:TextBlock Text="{loc:Tr Settings.Update}" FontTypography="BodyStrong" />
-                        <ui:TextBlock Text="{loc:Tr Settings.Update.Description}"
-                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                      TextWrapping="Wrap" />
-                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                            <ui:TextBlock FontTypography="Caption"
-                                          Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                          Text="{loc:Tr Settings.Update.CurrentVersion}" />
-                            <ui:TextBlock FontTypography="Caption"
-                                          Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                          Margin="4,0,0,0"
-                                          Text="{Binding CurrentVersionText, Mode=OneWay}" />
-                        </StackPanel>
-                        <ui:TextBlock Text="{Binding UpdateStatusText, Mode=OneWay}"
-                                      FontTypography="Caption"
-                                      Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}"
-                                      TextWrapping="Wrap"
-                                      Margin="0,4,0,0" />
-                    </StackPanel>
-                </ui:CardControl.Header>
-                <StackPanel Orientation="Vertical">
-                    <ui:ToggleSwitch Content="{loc:Tr Settings.Update.Auto}"
-                                     IsChecked="{Binding AutoCheckUpdate, Mode=TwoWay}"
-                                     Margin="0,0,0,8" />
-                    <StackPanel Orientation="Horizontal">
+                    <WrapPanel Orientation="Horizontal">
                         <ui:Button Content="{loc:Tr Update.CheckNow}"
                                    Appearance="Primary"
                                    Icon="{ui:SymbolIcon ArrowDownload24}"
                                    Command="{Binding CheckUpdateCommand}"
                                    IsEnabled="{Binding CanCheckUpdate, Mode=OneWay}"
-                                   Margin="0,0,8,0" />
+                                   Margin="0,0,8,8" />
                         <ui:Button Content="{loc:Tr Update.UpdateNow}"
                                    Appearance="Secondary"
                                    Icon="{ui:SymbolIcon ArrowSync24}"
                                    Command="{Binding UpdateNowCommand}"
                                    Visibility="{Binding HasUpdateAvailable, Converter={StaticResource BoolToVis}}"
-                                   Margin="0,0,8,0" />
+                                   Margin="0,0,8,8" />
                         <ui:Button Content="{loc:Tr Update.SkipThisVersion}"
                                    Appearance="Secondary"
                                    Command="{Binding SkipThisVersionCommand}"
-                                   Visibility="{Binding HasUpdateAvailable, Converter={StaticResource BoolToVis}}" />
-                    </StackPanel>
+                                   Visibility="{Binding HasUpdateAvailable, Converter={StaticResource BoolToVis}}"
+                                   Margin="0,0,0,8" />
+                    </WrapPanel>
                 </StackPanel>
-            </ui:CardControl>
 
-            <!-- 关于 -->
+                <!-- 右列：系统集成 -->
+                <StackPanel Grid.Column="2">
+
+                    <ui:TextBlock Text="{loc:Tr Settings.Group.Integration}"
+                                  FontTypography="Subtitle" Margin="0,0,0,10" />
+
+                    <ui:CardControl Margin="0,0,0,8">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <ui:TextBlock Text="{loc:Tr Settings.ContextMenu}" FontTypography="BodyStrong" />
+                                <ui:TextBlock Text="{loc:Tr Settings.ContextMenu.Description}"
+                                              FontTypography="Caption"
+                                              Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                              TextWrapping="Wrap" />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ui:ToggleSwitch IsChecked="{Binding IsContextMenuRegistered, Mode=TwoWay}" />
+                    </ui:CardControl>
+
+                    <ui:CardControl Margin="0,0,0,8">
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <ui:TextBlock Text="{loc:Tr Settings.IconCopy.Title}" FontTypography="BodyStrong" />
+                                <ui:TextBlock Text="{loc:Tr Settings.IconCopy.Description}"
+                                              FontTypography="Caption"
+                                              Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                              TextWrapping="Wrap" />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ui:ToggleSwitch IsChecked="{Binding CopyIconToFolder, Mode=TwoWay}" />
+                    </ui:CardControl>
+
+                    <ui:CardControl>
+                        <ui:CardControl.Header>
+                            <StackPanel>
+                                <ui:TextBlock Text="{loc:Tr Settings.ExplorerBg.Title}" FontTypography="BodyStrong" />
+                                <ui:TextBlock Text="{loc:Tr Settings.ExplorerBg.Description}"
+                                              FontTypography="Caption"
+                                              Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                              TextWrapping="Wrap" />
+                            </StackPanel>
+                        </ui:CardControl.Header>
+                        <ui:ToggleSwitch IsChecked="{Binding ExplorerBgInstalled, Mode=TwoWay}"
+                                         IsEnabled="{Binding CanToggleExplorerBg}" />
+                    </ui:CardControl>
+                </StackPanel>
+            </Grid>
+
+            <!-- ========== 关于（整行，最下方） ========== -->
             <ui:TextBlock Text="{loc:Tr About.Title}"
-                          FontTypography="Subtitle" Margin="0,12,0,12" />
+                          FontTypography="Subtitle" Margin="0,18,0,10" />
 
-            <ui:Card Padding="22" Margin="0,0,0,12">
+            <ui:Card Padding="20">
                 <StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <ui:SymbolIcon Symbol="FolderLink24" FontSize="30" Margin="0,0,12,0" />
+                    <StackPanel Orientation="Horizontal">
+                        <ui:SymbolIcon Symbol="FolderLink24" FontSize="28" Margin="0,0,12,0"
+                                       VerticalAlignment="Center" />
                         <StackPanel VerticalAlignment="Center">
                             <ui:TextBlock Text="{loc:Tr About.AppName}" FontTypography="Title" />
                             <StackPanel Orientation="Horizontal">
@@ -213,22 +190,17 @@
                             </StackPanel>
                         </StackPanel>
                     </StackPanel>
-                    <Separator Margin="0,12" />
-                    <ui:TextBlock Text="{loc:Tr About.Description}" TextWrapping="Wrap" />
 
-                    <Separator Margin="0,12" />
-                    <ui:TextBlock Text="{loc:Tr About.Tech}" FontTypography="BodyStrong" Margin="0,0,0,6" />
-                    <ui:TextBlock Text="{loc:Tr About.Tech.Body}" TextWrapping="Wrap"
-                                  Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <ui:TextBlock Text="{loc:Tr About.Description}"
+                                  TextWrapping="Wrap"
+                                  Margin="0,12,0,0" />
 
-                    <Separator Margin="0,12" />
-                    <WrapPanel Orientation="Horizontal">
-                        <ui:HyperlinkButton Content="{loc:Tr About.OpenWpfUi}"
-                                            Icon="{ui:SymbolIcon Link24}"
-                                            Command="{Binding About.OpenLinkCommand}"
-                                            CommandParameter="{Binding About.WpfUiUrl}"
-                                            Margin="0,0,0,4" />
-                    </WrapPanel>
+                    <ui:HyperlinkButton Content="{loc:Tr About.OpenWpfUi}"
+                                        Icon="{ui:SymbolIcon Link24}"
+                                        Command="{Binding About.OpenLinkCommand}"
+                                        CommandParameter="{Binding About.WpfUiUrl}"
+                                        Margin="0,8,0,0"
+                                        Padding="0" />
                 </StackPanel>
             </ui:Card>
 
