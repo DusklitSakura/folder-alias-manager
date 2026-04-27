@@ -67,6 +67,7 @@ public sealed class LocalizationService : ILocalizationService
         ["Nav.Settings"] = "设置",
         ["Nav.About"] = "关于",
         ["Nav.History"] = "历史记录",
+        ["Nav.Disguise"] = "文件夹伪装",
 
         // 文件夹页
         ["Folders.Title"] = "文件夹",
@@ -243,6 +244,43 @@ public sealed class LocalizationService : ILocalizationService
         ["Settings.ExplorerBg.HelperMissing"] = "未找到 WFAM.BgHost.exe。",
         ["Settings.ExplorerBg.DllMissing"] = "未找到 WFAM.BgHost.exe 或 WFAM.ExplorerBg.dll（请先构建 C++ 子项目）。",
         ["Settings.ExplorerBg.Failed"] = "启用 / 禁用失败。请查看日志。",
+
+        // 文件夹伪装
+        ["Disguise.Title"] = "文件夹伪装",
+        ["Disguise.Heading"] = "通过 desktop.ini 的 CLSID 伪装为系统对象",
+        ["Disguise.Description"] = "在目标文件夹里写入 [.ShellClassInfo].CLSID 并将目录标记为 +s +r，资源管理器会把它渲染为选中的系统命名空间对象（回收站、控制面板…）。点击「解除伪装」会删除 desktop.ini 并恢复为普通文件夹，里面的文件不会丢失。",
+        ["Disguise.Warning.Title"] = "使用前请注意",
+        ["Disguise.Warning.Message"] = "伪装后双击该文件夹会跳转到对应的系统对象而不会进入原目录。如需访问原始内容，请先点「解除伪装」或在资源管理器地址栏手动输入路径。请勿对系统目录（C:\\Windows、Program Files 等）使用。",
+        ["Disguise.DropPrimary"] = "拖放要伪装的文件夹到此处",
+        ["Disguise.DropSecondary"] = "支持多选；会自动检测已伪装的状态",
+        ["Disguise.DefaultPreset"] = "默认伪装目标：",
+        ["Disguise.Apply"] = "伪装",
+        ["Disguise.ApplyAll"] = "全部伪装为默认目标",
+        ["Disguise.Restore"] = "解除伪装",
+        ["Disguise.NoPresetSelected"] = "请先选择伪装目标。",
+        ["Disguise.Empty.Title"] = "还没有任何文件夹",
+        ["Disguise.Empty.Description"] = "导入或拖放文件夹以开始伪装。",
+        ["Disguise.Status.Normal"] = "当前状态：未伪装",
+        ["Disguise.Status.DisguisedAs"] = "当前状态：已伪装为 {0}",
+        ["Disguise.Status.DisguisedUnknown"] = "当前状态：已伪装（未知 CLSID {0}）",
+        ["Disguise.Busy.Detecting"] = "正在检测伪装状态…",
+        ["Disguise.Busy.Applying"] = "正在应用伪装…",
+        ["Disguise.Busy.Restoring"] = "正在解除伪装…",
+        ["Disguise.Notify.Applied"] = "已伪装 {0} 个文件夹为 {1}。",
+        ["Disguise.Notify.AppliedSingle"] = "伪装成功。",
+        ["Disguise.Notify.Restored"] = "已解除伪装。",
+        ["Disguise.Notify.Partial"] = "成功 {0} 个，失败 {1} 个：{2}",
+
+        // 伪装预设
+        ["Disguise.Preset.RecycleBin"] = "回收站",
+        ["Disguise.Preset.MyComputer"] = "此电脑",
+        ["Disguise.Preset.ControlPanel"] = "控制面板",
+        ["Disguise.Preset.Network"] = "网上邻居",
+        ["Disguise.Preset.Printers"] = "打印机与传真",
+        ["Disguise.Preset.Tasks"] = "计划任务",
+        ["Disguise.Preset.Fonts"] = "字体",
+        ["Disguise.Preset.AllTasks"] = "上帝模式（所有任务）",
+        ["Disguise.Preset.Connections"] = "网络连接",
     };
 
     private static Dictionary<string, string> EnUs() => new()
@@ -264,6 +302,7 @@ public sealed class LocalizationService : ILocalizationService
         ["Nav.Settings"] = "Settings",
         ["Nav.About"] = "About",
         ["Nav.History"] = "History",
+        ["Nav.Disguise"] = "Folder Disguise",
 
         ["Folders.Title"] = "Folders",
         ["Folders.Heading"] = "Folder Aliases & Icons",
@@ -436,5 +475,42 @@ public sealed class LocalizationService : ILocalizationService
         ["Settings.ExplorerBg.HelperMissing"] = "WFAM.BgHost.exe not found.",
         ["Settings.ExplorerBg.DllMissing"] = "WFAM.BgHost.exe or WFAM.ExplorerBg.dll not found (build the C++ sub-projects first).",
         ["Settings.ExplorerBg.Failed"] = "Enable / disable failed. Check the logs.",
+
+        // Folder disguise
+        ["Disguise.Title"] = "Folder Disguise",
+        ["Disguise.Heading"] = "Disguise folders as system shell objects via desktop.ini CLSID",
+        ["Disguise.Description"] = "Writes [.ShellClassInfo].CLSID into the target folder's desktop.ini and marks the folder +s +r so Explorer renders it as the chosen system namespace object (Recycle Bin, Control Panel, ...). Selecting \"Restore\" deletes desktop.ini and reverts the folder to a normal directory; the files inside are never touched.",
+        ["Disguise.Warning.Title"] = "Before you start",
+        ["Disguise.Warning.Message"] = "Once disguised, double-clicking the folder opens the matching system object instead of the original directory. To access the original contents, click \"Restore\" first or type the path into the Explorer address bar manually. Do not apply this to system directories (C:\\Windows, Program Files, ...).",
+        ["Disguise.DropPrimary"] = "Drop folders to disguise here",
+        ["Disguise.DropSecondary"] = "Multi-select supported; existing disguise state is detected automatically",
+        ["Disguise.DefaultPreset"] = "Default disguise target:",
+        ["Disguise.Apply"] = "Disguise",
+        ["Disguise.ApplyAll"] = "Disguise all as default",
+        ["Disguise.Restore"] = "Restore",
+        ["Disguise.NoPresetSelected"] = "Pick a disguise target first.",
+        ["Disguise.Empty.Title"] = "No folders yet",
+        ["Disguise.Empty.Description"] = "Import or drop folders to start disguising them.",
+        ["Disguise.Status.Normal"] = "Status: not disguised",
+        ["Disguise.Status.DisguisedAs"] = "Status: disguised as {0}",
+        ["Disguise.Status.DisguisedUnknown"] = "Status: disguised (unknown CLSID {0})",
+        ["Disguise.Busy.Detecting"] = "Detecting disguise state…",
+        ["Disguise.Busy.Applying"] = "Applying disguise…",
+        ["Disguise.Busy.Restoring"] = "Restoring…",
+        ["Disguise.Notify.Applied"] = "Disguised {0} folder(s) as {1}.",
+        ["Disguise.Notify.AppliedSingle"] = "Disguise applied.",
+        ["Disguise.Notify.Restored"] = "Disguise removed.",
+        ["Disguise.Notify.Partial"] = "{0} succeeded, {1} failed: {2}",
+
+        // Disguise presets
+        ["Disguise.Preset.RecycleBin"] = "Recycle Bin",
+        ["Disguise.Preset.MyComputer"] = "This PC",
+        ["Disguise.Preset.ControlPanel"] = "Control Panel",
+        ["Disguise.Preset.Network"] = "Network Neighborhood",
+        ["Disguise.Preset.Printers"] = "Printers and Faxes",
+        ["Disguise.Preset.Tasks"] = "Scheduled Tasks",
+        ["Disguise.Preset.Fonts"] = "Fonts",
+        ["Disguise.Preset.AllTasks"] = "God Mode (All Tasks)",
+        ["Disguise.Preset.Connections"] = "Network Connections",
     };
 }

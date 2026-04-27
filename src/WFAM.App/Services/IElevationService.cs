@@ -19,6 +19,11 @@ public interface IElevationService
     Task<IReadOnlyList<WriteResult>> ElevatedBatchAutorunAsync(
         IReadOnlyList<ElevatedAutorunRequest> items,
         CancellationToken ct = default);
+
+    /// <summary>批量提权伪装/解除伪装文件夹（写 desktop.ini 的 [.ShellClassInfo].CLSID）。</summary>
+    Task<IReadOnlyList<WriteResult>> ElevatedBatchDisguiseAsync(
+        IReadOnlyList<ElevatedDisguiseRequest> items,
+        CancellationToken ct = default);
 }
 
 public sealed record ElevatedWriteRequest(
@@ -46,4 +51,14 @@ public sealed record ElevatedAutorunRequest(
     string? StagedIconPath,
     string IconTargetName,
     string? BackgroundImage = null,
+    bool Restore = false);
+
+/// <summary>
+/// 提权伪装文件夹的请求。Helper 会在 <paramref name="FolderPath"/>
+/// 下重写 desktop.ini 为仅含 [.ShellClassInfo].CLSID 并设上 +s +r；Restore 为真时则删除。
+/// </summary>
+public sealed record ElevatedDisguiseRequest(
+    string FolderPath,
+    string Name,
+    string Clsid,
     bool Restore = false);

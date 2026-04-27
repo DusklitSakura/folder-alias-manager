@@ -63,6 +63,7 @@ public partial class App : Application
         s.AddSingleton<IUpdatePromptService, UpdatePromptService>();
         s.AddSingleton<IAdminRestartService, AdminRestartService>();
         s.AddSingleton<IExplorerBgService, ExplorerBgService>();
+        s.AddSingleton<IFolderDisguiseService, FolderDisguiseService>();
         // 本地化服务使用全局单例（TranslateExtension 也会访问同一个实例）
         s.AddSingleton<ILocalizationService>(_ => LocalizationService.Instance);
 
@@ -73,6 +74,7 @@ public partial class App : Application
         s.AddSingleton<SettingsViewModel>();
         s.AddSingleton<AboutViewModel>();
         s.AddSingleton<HistoryViewModel>();
+        s.AddSingleton<DisguiseViewModel>();
         s.AddTransient<EditFolderViewModel>();
 
         // —— Views ——
@@ -82,6 +84,7 @@ public partial class App : Application
         s.AddTransient<SettingsPage>();
         s.AddTransient<AboutPage>();
         s.AddTransient<HistoryPage>();
+        s.AddTransient<DisguisePage>();
         s.AddTransient<EditFolderWindow>();
     }
 

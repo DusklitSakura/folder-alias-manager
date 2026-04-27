@@ -21,6 +21,10 @@ public sealed class HistoryEntry
     public string AfterAlias { get; set; } = string.Empty;
     public string AfterIconPath { get; set; } = string.Empty;
     public int AfterIconIndex { get; set; }
+
+    // 伪装专用：记录伪装前/后的 CLSID，空串代表未伪装。
+    public string BeforeClsid { get; set; } = string.Empty;
+    public string AfterClsid { get; set; } = string.Empty;
 }
 
 public enum HistoryAction

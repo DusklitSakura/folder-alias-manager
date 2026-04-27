@@ -191,6 +191,75 @@ public sealed class ElevationService : IElevationService
         catch { /* ignore */ }
     }
 
+    public async Task<IReadOnlyList<WriteResult>> ElevatedBatchDisguiseAsync(
+        IReadOnlyList<ElevatedDisguiseRequest> items,
+        CancellationToken ct = default)
+    {
+        var helper = HelperPath.Value
+            ?? throw new InvalidOperationException("DesktopIniHelper.exe 未找到。");
+
+        var pid = Environment.ProcessId;
+        var inputFile = Path.Combine(Path.GetTempPath(), $"wfam_in_{pid}_{Guid.NewGuid():N}.json");
+        var outputFile = Path.Combine(Path.GetTempPath(), $"wfam_out_{pid}_{Guid.NewGuid():N}.json");
+
+        var payload = new DisguiseBatchInput
+        {
+            OutputFile = outputFile,
+            Items = items.Select(i => new DisguiseBatchItem
+            {
+                FolderPath = i.FolderPath,
+                Name = i.Name,
+                Clsid = i.Clsid ?? string.Empty,
+                Restore = i.Restore,
+            }).ToList(),
+        };
+
+        try
+        {
+            await File.WriteAllTextAsync(inputFile,
+                JsonSerializer.Serialize(payload, JsonOpts), Encoding.UTF8, ct).ConfigureAwait(false);
+
+            var status = await Task.Run(() => RunElevated(helper, $"--batch-disguise \"{inputFile}\"", 120_000), ct)
+                                   .ConfigureAwait(false);
+
+            if (status == ElevationStatus.Cancelled)
+                return items.Select(i => new WriteResult(i.FolderPath, i.Name, WriteOutcome.AccessDenied, "用户取消了 UAC")).ToList();
+            if (status != ElevationStatus.Ok)
+                return items.Select(i => new WriteResult(i.FolderPath, i.Name, WriteOutcome.Failed, status.ToString())).ToList();
+
+            if (!File.Exists(outputFile))
+                return items.Select(i => new WriteResult(i.FolderPath, i.Name, WriteOutcome.Failed, "Helper 未输出结果文件")).ToList();
+
+            var text = await File.ReadAllTextAsync(outputFile, Encoding.UTF8, ct).ConfigureAwait(false);
+            var output = JsonSerializer.Deserialize<BatchOutput>(text, JsonOpts) ?? new BatchOutput();
+
+            return output.Results.Select(r => new WriteResult(
+                r.FolderPath,
+                r.Name,
+                r.Success ? WriteOutcome.Success : WriteOutcome.Failed,
+                string.IsNullOrEmpty(r.Message) ? null : r.Message)).ToList();
+        }
+        finally
+        {
+            TryDelete(inputFile);
+            TryDelete(outputFile);
+        }
+    }
+
+    private sealed class DisguiseBatchInput
+    {
+        public List<DisguiseBatchItem> Items { get; set; } = new();
+        public string OutputFile { get; set; } = string.Empty;
+    }
+
+    private sealed class DisguiseBatchItem
+    {
+        public string FolderPath { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Clsid { get; set; } = string.Empty;
+        public bool Restore { get; set; }
+    }
+
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,

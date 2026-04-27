@@ -40,8 +40,14 @@ internal static class Program
                 return RunAutorunBatch(args[1]);
             }
 
+            if (args.Length >= 2 && args[0] == "--batch-disguise")
+            {
+                return RunDisguiseBatch(args[1]);
+            }
+
             Console.Error.WriteLine("Usage: DesktopIniHelper.exe --batch <input-json>");
             Console.Error.WriteLine("       DesktopIniHelper.exe --batch-autorun <input-json>");
+            Console.Error.WriteLine("       DesktopIniHelper.exe --batch-disguise <input-json>");
             return 2;
         }
         catch (SecurityException ex)
@@ -264,6 +270,84 @@ internal static class Program
         [JsonPropertyName("staged_icon_path")] public string StagedIconPath { get; set; } = string.Empty;
         [JsonPropertyName("icon_target_name")] public string IconTargetName { get; set; } = string.Empty;
         [JsonPropertyName("background_image")] public string BackgroundImage { get; set; } = string.Empty;
+        [JsonPropertyName("restore")] public bool Restore { get; set; }
+    }
+
+    // ---- 文件夹伪装批处理 ----
+
+    private static int RunDisguiseBatch(string rawInputFile)
+    {
+        var inputFile = SecurityGuard.ValidateInputFile(rawInputFile);
+        var json = File.ReadAllText(inputFile, Encoding.UTF8);
+        var input = JsonSerializer.Deserialize<DisguiseBatchInput>(json, JsonOpts) ?? new DisguiseBatchInput();
+        var outputFile = SecurityGuard.ValidateOutputFile(input.OutputFile, inputFile);
+
+        var results = new List<BatchResultItem>();
+        foreach (var item in input.Items)
+        {
+            bool ok = false;
+            string? message = null;
+            try
+            {
+                if (!SecurityGuard.IsFolderAllowed(item.FolderPath, out var reason))
+                {
+                    message = $"拒绝目录：{reason}";
+                    Console.Error.WriteLine($"[{item.Name}] {message}（{item.FolderPath}）");
+                }
+                else if (item.Restore)
+                {
+                    ok = DisguiseWriter.Restore(item.FolderPath);
+                    if (!ok) message = "恢复默认失败";
+                }
+                else if (!SecurityGuard.IsValidClsid(item.Clsid, out var clsidReason))
+                {
+                    message = clsidReason;
+                    Console.Error.WriteLine($"[{item.Name}] {message}");
+                }
+                else
+                {
+                    ok = DisguiseWriter.Write(item.FolderPath, item.Clsid);
+                    if (!ok) message = "写入 desktop.ini 失败";
+                }
+            }
+            catch (Exception ex)
+            {
+                ok = false;
+                message = ex.Message;
+                Console.Error.WriteLine($"[{item.Name}] {ex.Message}");
+            }
+            results.Add(new BatchResultItem
+            {
+                FolderPath = item.FolderPath,
+                Name = item.Name,
+                Success = ok,
+                Message = message ?? string.Empty,
+            });
+        }
+
+        if (!string.IsNullOrEmpty(outputFile))
+        {
+            File.WriteAllText(
+                outputFile,
+                JsonSerializer.Serialize(new BatchOutput { Results = results }, JsonOpts),
+                Encoding.UTF8);
+        }
+
+        SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, IntPtr.Zero, IntPtr.Zero);
+        return 0;
+    }
+
+    private sealed class DisguiseBatchInput
+    {
+        [JsonPropertyName("items")] public List<DisguiseBatchItem> Items { get; set; } = new();
+        [JsonPropertyName("output_file")] public string OutputFile { get; set; } = string.Empty;
+    }
+
+    private sealed class DisguiseBatchItem
+    {
+        [JsonPropertyName("folder_path")] public string FolderPath { get; set; } = string.Empty;
+        [JsonPropertyName("name")] public string Name { get; set; } = string.Empty;
+        [JsonPropertyName("clsid")] public string Clsid { get; set; } = string.Empty;
         [JsonPropertyName("restore")] public bool Restore { get; set; }
     }
 }

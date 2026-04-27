@@ -90,6 +90,12 @@
                             <ui:SymbolIcon Symbol="UsbStick24" />
                         </ui:NavigationViewItem.Icon>
                     </ui:NavigationViewItem>
+                    <ui:NavigationViewItem Content="{loc:Tr Nav.Disguise}"
+                                           TargetPageType="{x:Type pages:DisguisePage}">
+                        <ui:NavigationViewItem.Icon>
+                            <ui:SymbolIcon Symbol="HatGraduation24" />
+                        </ui:NavigationViewItem.Icon>
+                    </ui:NavigationViewItem>
                     <ui:NavigationViewItem Content="{loc:Tr Nav.History}"
                                            TargetPageType="{x:Type pages:HistoryPage}">
                         <ui:NavigationViewItem.Icon>

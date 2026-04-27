@@ -57,4 +57,46 @@ public static class DragDropHelper
         var vm = App.Services.GetRequiredService<FoldersViewModel>();
         await vm.AddFoldersAsync(folders);
     }
+
+    // ---- 文件夹伪装页拖放 ----
+
+    public static readonly DependencyProperty DropDisguiseFoldersProperty =
+        DependencyProperty.RegisterAttached(
+            "DropDisguiseFolders",
+            typeof(bool),
+            typeof(DragDropHelper),
+            new PropertyMetadata(false, OnDropDisguiseFoldersChanged));
+
+    public static void SetDropDisguiseFolders(DependencyObject element, bool value) =>
+        element.SetValue(DropDisguiseFoldersProperty, value);
+
+    public static bool GetDropDisguiseFolders(DependencyObject element) =>
+        (bool)element.GetValue(DropDisguiseFoldersProperty);
+
+    private static void OnDropDisguiseFoldersChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not UIElement el) return;
+        if ((bool)e.NewValue)
+        {
+            el.AllowDrop = true;
+            el.PreviewDragOver += OnPreviewDragOver;
+            el.Drop += OnDropDisguise;
+        }
+        else
+        {
+            el.PreviewDragOver -= OnPreviewDragOver;
+            el.Drop -= OnDropDisguise;
+        }
+    }
+
+    private static async void OnDropDisguise(object sender, DragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+        if (e.Data.GetData(DataFormats.FileDrop) is not string[] paths) return;
+        var folders = paths.Where(Directory.Exists).ToList();
+        if (folders.Count == 0) return;
+
+        var vm = App.Services.GetRequiredService<DisguiseViewModel>();
+        await vm.AddFoldersAsync(folders);
+    }
 }

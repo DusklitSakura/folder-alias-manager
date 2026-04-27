@@ -32,6 +32,11 @@ internal static class SecurityGuard
     private static readonly Regex DriveIconTargetNamePattern =
         new(@"^[A-Za-z0-9_\-]{1,32}\.ico$", RegexOptions.Compiled);
 
+    /// <summary>desktop.ini CLSID 必须形如 {GUID}。</summary>
+    private static readonly Regex ClsidPattern =
+        new(@"^\{[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}\}$",
+            RegexOptions.Compiled);
+
     /// <summary>
     /// 校验调用方可信。
     /// UAC 提权后真正的父进程是 svchost.exe (AppInfo)，因此不能直接看父 PID；
@@ -183,6 +188,16 @@ internal static class SecurityGuard
         if (string.IsNullOrEmpty(name)) { reason = "空名称"; return false; }
         if (!DriveIconTargetNamePattern.IsMatch(name))
         { reason = $"不允许的图标文件名：{name}"; return false; }
+        return true;
+    }
+
+    /// <summary>校验 desktop.ini 的 CLSID 字符串格式（必须是带大括号的标准 GUID）。</summary>
+    public static bool IsValidClsid(string? value, out string reason)
+    {
+        reason = string.Empty;
+        if (string.IsNullOrEmpty(value)) { reason = "空 CLSID"; return false; }
+        if (!ClsidPattern.IsMatch(value))
+        { reason = $"CLSID 格式不合法：{value}"; return false; }
         return true;
     }
 

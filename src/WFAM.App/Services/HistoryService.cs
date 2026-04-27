@@ -39,7 +39,8 @@ public sealed class HistoryService : IHistoryService
         // 跳过没有实际改动的条目
         if (string.Equals(entry.BeforeAlias, entry.AfterAlias, StringComparison.Ordinal)
             && string.Equals(entry.BeforeIconPath, entry.AfterIconPath, StringComparison.OrdinalIgnoreCase)
-            && entry.BeforeIconIndex == entry.AfterIconIndex)
+            && entry.BeforeIconIndex == entry.AfterIconIndex
+            && string.Equals(entry.BeforeClsid, entry.AfterClsid, StringComparison.OrdinalIgnoreCase))
         {
             return;
         }

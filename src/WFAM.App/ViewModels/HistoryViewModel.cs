@@ -12,6 +12,7 @@ public partial class HistoryViewModel : ObservableObject
 {
     private readonly IHistoryService _history;
     private readonly IDesktopIniService _ini;
+    private readonly IFolderDisguiseService _disguise;
     private readonly IElevationService _elevation;
     private readonly IShellService _shell;
     private readonly INotificationService _notify;
@@ -27,19 +28,20 @@ public partial class HistoryViewModel : ObservableObject
     public HistoryViewModel(
         IHistoryService history,
         IDesktopIniService ini,
+        IFolderDisguiseService disguise,
         IElevationService elevation,
         IShellService shell,
         INotificationService notify,
         ILocalizationService loc,
         ILogger<HistoryViewModel> logger)
     {
-        _history = history; _ini = ini; _elevation = elevation;
+        _history = history; _ini = ini; _disguise = disguise; _elevation = elevation;
         _shell = shell; _notify = notify; _loc = loc; _logger = logger;
         _history.Changed += (_, _) => Reload();
         Reload();
     }
 
-    public HistoryViewModel() : this(null!, null!, null!, null!, null!, null!, null!) { }
+    public HistoryViewModel() : this(null!, null!, null!, null!, null!, null!, null!, null!) { }
 
     private void Reload()
     {
@@ -72,6 +74,14 @@ public partial class HistoryViewModel : ObservableObject
         IsBusy = true;
         try
         {
+            // 如果这是伪装记录，走伪装服务 + Helper
+            var isDisguiseEntry = !string.Equals(entry.BeforeClsid, entry.AfterClsid, StringComparison.OrdinalIgnoreCase);
+            if (isDisguiseEntry)
+            {
+                await RestoreDisguiseAsync(entry);
+                return;
+            }
+
             // 当前实际状态 → 写入 history 的“before”
             var current = await _ini.ReadAsync(entry.FolderPath);
 
@@ -139,6 +149,62 @@ public partial class HistoryViewModel : ObservableObject
         }
         finally { IsBusy = false; }
     }
+
+    private async Task RestoreDisguiseAsync(HistoryEntry entry)
+    {
+        var currentState = _disguise.Detect(entry.FolderPath);
+        var targetClsid = entry.BeforeClsid; // 还原到伪装前状态
+
+        WriteOutcome outcome;
+        string? failMessage;
+        if (string.IsNullOrEmpty(targetClsid))
+        {
+            var rs = await _disguise.RestoreAsync(entry.FolderPath);
+            outcome = rs.Outcome; failMessage = rs.Message;
+            if (outcome == WriteOutcome.AccessDenied && _elevation.IsHelperAvailable)
+            {
+                var r = await _elevation.ElevatedBatchDisguiseAsync(new[]
+                {
+                    new ElevatedDisguiseRequest(entry.FolderPath, entry.FolderName, string.Empty, Restore: true),
+                });
+                if (r.Count > 0) { outcome = r[0].Outcome; failMessage = r[0].Message; }
+                else { outcome = WriteOutcome.Failed; failMessage = "Helper 未返回结果"; }
+            }
+        }
+        else
+        {
+            var rs = await _disguise.DisguiseAsync(entry.FolderPath, targetClsid);
+            outcome = rs.Outcome; failMessage = rs.Message;
+            if (outcome == WriteOutcome.AccessDenied && _elevation.IsHelperAvailable)
+            {
+                var r = await _elevation.ElevatedBatchDisguiseAsync(new[]
+                {
+                    new ElevatedDisguiseRequest(entry.FolderPath, entry.FolderName, targetClsid),
+                });
+                if (r.Count > 0) { outcome = r[0].Outcome; failMessage = r[0].Message; }
+                else { outcome = WriteOutcome.Failed; failMessage = "Helper 未返回结果"; }
+            }
+        }
+
+        if (outcome != WriteOutcome.Success)
+        {
+            var detail = string.IsNullOrWhiteSpace(failMessage) ? entry.FolderName : $"{entry.FolderName}: {failMessage}";
+            _notify.Warning(_loc["Common.Failed"], detail);
+            return;
+        }
+
+        _shell.NotifyAssocChanged();
+
+        _history.Add(new HistoryEntry
+        {
+            Action = HistoryAction.Restore,
+            FolderPath = entry.FolderPath,
+            FolderName = entry.FolderName,
+            BeforeClsid = currentState.Clsid ?? string.Empty,
+            AfterClsid = targetClsid,
+        });
+        _notify.Success(_loc["Common.Success"], entry.FolderName);
+    }
 }
 
 public sealed class HistoryItemViewModel : ObservableObject
@@ -168,13 +234,29 @@ public sealed class HistoryItemViewModel : ObservableObject
         }
     }
 
-    public string BeforeText => Format(Entry.BeforeAlias, Entry.BeforeIconPath, Entry.BeforeIconIndex);
-    public string AfterText  => Format(Entry.AfterAlias,  Entry.AfterIconPath,  Entry.AfterIconIndex);
+    public string BeforeText => Format(Entry.BeforeAlias, Entry.BeforeIconPath, Entry.BeforeIconIndex, Entry.BeforeClsid);
+    public string AfterText  => Format(Entry.AfterAlias,  Entry.AfterIconPath,  Entry.AfterIconIndex,  Entry.AfterClsid);
 
-    private static string Format(string alias, string iconPath, int iconIndex)
+    private string Format(string alias, string iconPath, int iconIndex, string clsid)
     {
+        // 伪装记录优先显示“伪装: <预设名称> / CLSID”
+        if (!string.IsNullOrEmpty(clsid))
+        {
+            var label = LookupPresetName(clsid) ?? clsid;
+            var prefix = _loc is null ? "Disguise" : _loc["Disguise.Title"];
+            return $"{prefix}: {label}";
+        }
         var a = string.IsNullOrEmpty(alias) ? "—" : alias;
         if (string.IsNullOrEmpty(iconPath)) return a;
         return $"{a}  ·  {Path.GetFileName(iconPath)}({iconIndex})";
+    }
+
+    private string? LookupPresetName(string clsid)
+    {
+        var disguise = App.Services?.GetService(typeof(IFolderDisguiseService)) as IFolderDisguiseService;
+        var preset = disguise?.Presets.FirstOrDefault(p =>
+            string.Equals(p.Clsid, clsid, StringComparison.OrdinalIgnoreCase));
+        if (preset is null) return null;
+        return _loc is null ? preset.NameKey : _loc[preset.NameKey];
     }
 }
